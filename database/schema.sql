@@ -6,7 +6,7 @@ DROP TABLE IF EXISTS sessions CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 
 -- Enum untuk auth provider
-CREATE TYPE auth_provider AS ENUM ('google', 'facebook', 'email');
+CREATE TYPE auth_provider AS ENUM ('google', 'facebook', 'github', 'email');
 
 -- Table: users
 CREATE TABLE users (
@@ -18,6 +18,7 @@ CREATE TABLE users (
     auth_provider auth_provider NOT NULL DEFAULT 'email',
     google_id VARCHAR(255) UNIQUE, -- Google User ID (sub)
     facebook_id VARCHAR(255) UNIQUE, -- Facebook User ID
+    github_id VARCHAR(255) UNIQUE, -- GitHub User ID
     email_verified BOOLEAN DEFAULT FALSE,
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -40,6 +41,7 @@ CREATE TABLE sessions (
 CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_users_google_id ON users(google_id);
 CREATE INDEX idx_users_facebook_id ON users(facebook_id);
+CREATE INDEX idx_users_github_id ON users(github_id);
 CREATE INDEX idx_sessions_user_id ON sessions(user_id);
 CREATE INDEX idx_sessions_refresh_token ON sessions(refresh_token);
 CREATE INDEX idx_sessions_expires_at ON sessions(expires_at);
@@ -87,6 +89,7 @@ $$ LANGUAGE plpgsql;
 COMMENT ON TABLE users IS 'Tabel untuk menyimpan data pengguna dari berbagai auth provider';
 COMMENT ON TABLE sessions IS 'Tabel untuk menyimpan refresh tokens dan session management';
 COMMENT ON COLUMN users.google_id IS 'Google User ID (sub) dari JWT token Google OAuth';
+COMMENT ON COLUMN users.github_id IS 'GitHub User ID dari GitHub OAuth';
 COMMENT ON COLUMN users.password_hash IS 'bcrypt hash, NULL untuk OAuth users';
 COMMENT ON FUNCTION cleanup_expired_sessions() IS 'Hapus expired sessions, jalankan via cron';
 

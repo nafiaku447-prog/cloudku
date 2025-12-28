@@ -138,8 +138,19 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode, onS
       // Google button is already rendered via renderButton()
       // Click will be handled automatically
       return;
+    } else if (provider === 'GitHub') {
+      const clientId = import.meta.env.VITE_GITHUB_CLIENT_ID;
+      if (!clientId || clientId === 'your-github-client-id-here') {
+        setError('GitHub Client ID belum dikonfigurasi di .env.local');
+        return;
+      }
+
+      setIsLoading(true);
+      // Construct GitHub OAuth URL
+      const githubUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&scope=user:email`;
+      window.location.href = githubUrl;
     } else {
-      // GitHub/Other masih simulasi
+      // Other Providers simulation
       setIsLoading(true);
       setTimeout(() => {
         onSuccess({

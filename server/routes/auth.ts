@@ -6,6 +6,7 @@
 import express from 'express';
 import {
     googleAuth,
+    githubAuth,
     register,
     login,
     getMe,
@@ -20,6 +21,13 @@ const router = express.Router();
  * @access  Public
  */
 router.post('/google', googleAuth);
+
+/**
+ * @route   POST /api/auth/github
+ * @desc    GitHub OAuth login/register
+ * @access  Public
+ */
+router.post('/github', githubAuth);
 
 /**
  * @route   POST /api/auth/register

@@ -11,9 +11,10 @@ export interface User {
     name: string;
     password_hash?: string | null;
     profile_picture?: string | null;
-    auth_provider: 'google' | 'facebook' | 'email';
+    auth_provider: 'google' | 'facebook' | 'github' | 'email';
     google_id?: string | null;
     facebook_id?: string | null;
+    github_id?: string | null;
     email_verified: boolean;
     is_active: boolean;
     created_at: Date;
@@ -26,9 +27,10 @@ export interface CreateUserData {
     name: string;
     password_hash?: string;
     profile_picture?: string;
-    auth_provider: 'google' | 'facebook' | 'email';
+    auth_provider: 'google' | 'facebook' | 'github' | 'email';
     google_id?: string;
     facebook_id?: string;
+    github_id?: string;
     email_verified?: boolean;
 }
 
@@ -45,14 +47,15 @@ export class UserModel {
             auth_provider,
             google_id,
             facebook_id,
+            github_id,
             email_verified = false,
         } = userData;
 
         const result = await query(
             `INSERT INTO users (
         email, name, password_hash, profile_picture, 
-        auth_provider, google_id, facebook_id, email_verified
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        auth_provider, google_id, facebook_id, github_id, email_verified
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       RETURNING *`,
             [
                 email,
@@ -62,6 +65,7 @@ export class UserModel {
                 auth_provider,
                 google_id || null,
                 facebook_id || null,
+                github_id || null,
                 email_verified,
             ]
         );
@@ -93,6 +97,16 @@ export class UserModel {
     static async findByFacebookId(facebookId: string): Promise<User | null> {
         const result = await query('SELECT * FROM users WHERE facebook_id = $1', [
             facebookId,
+        ]);
+        return result.rows[0] || null;
+    }
+
+    /**
+     * Cari user by GitHub ID
+     */
+    static async findByGithubId(githubId: string): Promise<User | null> {
+        const result = await query('SELECT * FROM users WHERE github_id = $1', [
+            githubId,
         ]);
         return result.rows[0] || null;
     }

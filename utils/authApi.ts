@@ -47,6 +47,26 @@ export const googleLogin = async (userData: {
 };
 
 /**
+ * GitHub OAuth Login handler
+ */
+export const githubLogin = async (code: string): Promise<LoginResponse> => {
+    const response = await fetch(`${API_URL}/api/auth/github`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ code }),
+    });
+
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Login dengan GitHub gagal');
+    }
+
+    return await response.json();
+};
+
+/**
  * Email/Password Register
  */
 export const register = async (data: {

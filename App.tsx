@@ -13,7 +13,7 @@ import AuthModal from './components/AuthModal';
 import PromoSection from './components/PromoSection';
 import ServerLocations from './components/ServerLocations';
 import DashboardPage from './pages/Dashboard';
-import { isAuthenticated } from './utils/authApi';
+import { isAuthenticated, githubLogin, saveToken } from './utils/authApi';
 import HostingPage from './pages/Hosting';
 import DomainsPage from './pages/Domains';
 import EmailPage from './pages/Email';
@@ -98,6 +98,42 @@ const App: React.FC = () => {
   const handleLogout = () => {
     setUser(null);
   };
+
+  // Detect GitHub Callback
+  const githubTriggered = React.useRef(false);
+
+  React.useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+
+    if (code && !isAuthenticated() && !githubTriggered.current) {
+      githubTriggered.current = true;
+      const performGithubLogin = async () => {
+        setIsAuthModalOpen(true);
+        // We'll pass a signal to AuthModal to show loading or handle it here
+        try {
+          const response = await githubLogin(code);
+          if (response.data?.token) {
+            saveToken(response.data.token);
+            setUser({
+              name: response.data.user.name,
+              email: response.data.user.email
+            });
+            // Clean URL
+            window.history.replaceState({}, document.title, "/");
+            // Redirect to dashboard
+            window.location.href = '/dashboard';
+          }
+        } catch (err) {
+          console.error('GitHub Login failed:', err);
+          // Just clean URL for now
+          window.history.replaceState({}, document.title, "/");
+        }
+      };
+
+      performGithubLogin();
+    }
+  }, []);
 
   return (
     <ThemeProvider>

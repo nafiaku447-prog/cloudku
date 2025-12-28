@@ -24,6 +24,164 @@ const generateToken = (userId: number, email: string): string => {
 };
 
 /**
+ * GitHub OAuth Login/Register
+ */
+export const githubAuth = async (req: Request, res: Response) => {
+    try {
+        const { code } = req.body;
+
+        if (!code) {
+            return res.status(400).json({
+                success: false,
+                message: 'Code GitHub tidak ditemukan',
+            });
+        }
+
+        // Debug: Pastikan secret terisi (jangan tampilkan full secret di log production)
+        const clientId = process.env.GITHUB_CLIENT_ID;
+        const clientSecret = process.env.GITHUB_CLIENT_SECRET;
+
+        console.log('GitHub Auth Attempt - Client ID present:', !!clientId);
+        console.log('GitHub Auth Attempt - Client Secret present:', !!clientSecret);
+
+        if (!clientId || !clientSecret) {
+            return res.status(500).json({
+                success: false,
+                message: 'Konfigurasi GitHub (Client ID/Secret) di server belum lengkap. Cek .env.local',
+            });
+        }
+
+        // 1. Exchange code for access token
+        const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+            },
+            body: JSON.stringify({
+                client_id: clientId,
+                client_secret: clientSecret,
+                code,
+            }),
+        });
+
+        const tokenData = await tokenResponse.json();
+        console.log('GitHub Token Data:', tokenData);
+
+        if (tokenData.error) {
+            return res.status(400).json({
+                success: false,
+                message: `GitHub Error: ${tokenData.error} - ${tokenData.error_description || 'Gagal menukar code GitHub'}`,
+            });
+        }
+
+        const accessToken = tokenData.access_token;
+
+        // 2. Get GitHub user profile
+        const userProfileResponse = await fetch('https://api.github.com/user', {
+            headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'User-Agent': 'HostModern-App',
+            },
+        });
+
+        const githubUser = await userProfileResponse.json();
+
+        if (!githubUser.id) {
+            return res.status(400).json({
+                success: false,
+                message: 'Gagal mengambil profil GitHub',
+            });
+        }
+
+        const sub = String(githubUser.id);
+        const name = githubUser.name || githubUser.login;
+        let email = githubUser.email;
+        const picture = githubUser.avatar_url;
+
+        // 3. GitHub email might be null if private, fetch emails
+        if (!email) {
+            const emailsResponse = await fetch('https://api.github.com/user/emails', {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'User-Agent': 'HostModern-App',
+                },
+            });
+            const emails = await emailsResponse.json();
+            const primaryEmail = emails.find((e: any) => e.primary && e.verified) || emails[0];
+            email = primaryEmail?.email;
+        }
+
+        if (!email) {
+            return res.status(400).json({
+                success: false,
+                message: 'Email GitHub tidak ditemukan atau belum diverifikasi',
+            });
+        }
+
+        // 4. Handle DB logic (similar to Google)
+        let user = await UserModel.findByGithubId(sub);
+
+        if (!user) {
+            user = await UserModel.findByEmail(email);
+
+            if (user) {
+                // Link GitHub ID
+                await query('UPDATE users SET github_id = $1, auth_provider = $2 WHERE id = $3', [sub, 'github', user.id]);
+                user = await UserModel.findById(user.id) as User;
+            } else {
+                // New user
+                user = await UserModel.create({
+                    email,
+                    name,
+                    profile_picture: picture,
+                    auth_provider: 'github',
+                    github_id: sub,
+                    email_verified: true,
+                });
+            }
+        } else {
+            // Update profile info if changed
+            if (user.profile_picture !== picture || user.name !== name) {
+                user = await UserModel.updateProfile(user.id, {
+                    profile_picture: picture,
+                    name: name
+                });
+            }
+        }
+
+        await UserModel.updateLastLogin(user.id);
+        user = await UserModel.findById(user.id) as User;
+
+        const token = generateToken(user.id, user.email);
+
+        return res.status(200).json({
+            success: true,
+            message: 'Login GitHub berhasil',
+            data: {
+                token,
+                user: {
+                    id: user.id,
+                    email: user.email,
+                    name: user.name,
+                    profile_picture: user.profile_picture,
+                    auth_provider: user.auth_provider,
+                    email_verified: user.email_verified,
+                },
+            },
+        });
+
+    } catch (error) {
+        console.error('GitHub Auth Error:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Terjadi kesalahan saat login dengan GitHub',
+            error: error instanceof Error ? error.message : 'Unknown error',
+        });
+    }
+};
+
+/**
  * Google OAuth Login/Register
  * Frontend akan mengirim Google JWT token yang sudah di-decode
  */
