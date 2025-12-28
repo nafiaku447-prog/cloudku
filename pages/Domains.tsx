@@ -191,12 +191,12 @@ const DomainsPage: React.FC = () => {
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-3">
                                                     <div className="w-10 h-10 bg-gradient-to-br from-[#5865F2] to-[#4F46E5] rounded-lg flex items-center justify-center text-white font-semibold">
-                                                        {domain.name.charAt(0).toUpperCase()}
+                                                        {(domain?.name || 'D').charAt(0).toUpperCase()}
                                                     </div>
                                                     <div>
-                                                        <div className="font-semibold text-gray-900">{domain.name}</div>
+                                                        <div className="font-semibold text-gray-900">{domain?.name || 'Unknown Domain'}</div>
                                                         <div className="text-xs text-gray-500 flex items-center gap-1">
-                                                            {domain.ssl && (
+                                                            {domain?.ssl && (
                                                                 <>
                                                                     <svg className="w-3 h-3 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
@@ -208,19 +208,19 @@ const DomainsPage: React.FC = () => {
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4 text-sm text-gray-900">{domain.registrar}</td>
-                                            <td className="px-6 py-4 text-sm text-gray-900">{domain.expires}</td>
+                                            <td className="px-6 py-4 text-sm text-gray-900">{domain?.registrar || 'N/A'}</td>
+                                            <td className="px-6 py-4 text-sm text-gray-900">{domain?.expires || 'N/A'}</td>
                                             <td className="px-6 py-4">
-                                                <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium ${domain.dns === 'active' ? 'bg-green-50 text-green-700' : 'bg-orange-50 text-orange-700'
+                                                <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium ${(domain?.dns || 'inactive') === 'active' ? 'bg-green-50 text-green-700' : 'bg-orange-50 text-orange-700'
                                                     }`}>
-                                                    {domain.dns.charAt(0).toUpperCase() + domain.dns.slice(1)}
+                                                    {(domain?.dns || 'inactive').charAt(0).toUpperCase() + (domain?.dns || 'inactive').slice(1)}
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4">
                                                 <label className="relative inline-flex items-center cursor-pointer">
                                                     <input
                                                         type="checkbox"
-                                                        checked={domain.autoRenew}
+                                                        checked={domain?.autoRenew || false}
                                                         onChange={() => handleAutoRenewToggle(domain.id, domain.autoRenew)}
                                                         className="sr-only peer"
                                                     />
@@ -228,15 +228,15 @@ const DomainsPage: React.FC = () => {
                                                 </label>
                                             </td>
                                             <td className="px-6 py-4">
-                                                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold ${domain.status === 'active' ? 'bg-green-100 text-green-700' :
-                                                        domain.status === 'expiring' ? 'bg-orange-100 text-orange-700' :
-                                                            'bg-gray-100 text-gray-700'
+                                                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold ${(domain?.status || 'unknown') === 'active' ? 'bg-green-100 text-green-700' :
+                                                    (domain?.status || 'unknown') === 'expiring' ? 'bg-orange-100 text-orange-700' :
+                                                        'bg-gray-100 text-gray-700'
                                                     }`}>
-                                                    <span className={`w-1.5 h-1.5 rounded-full ${domain.status === 'active' ? 'bg-green-600' :
-                                                            domain.status === 'expiring' ? 'bg-orange-600' :
-                                                                'bg-gray-600'
+                                                    <span className={`w-1.5 h-1.5 rounded-full ${(domain?.status || 'unknown') === 'active' ? 'bg-green-600' :
+                                                        (domain?.status || 'unknown') === 'expiring' ? 'bg-orange-600' :
+                                                            'bg-gray-600'
                                                         }`}></span>
-                                                    {domain.status.charAt(0).toUpperCase() + domain.status.slice(1)}
+                                                    {(domain?.status || 'unknown').charAt(0).toUpperCase() + (domain?.status || 'unknown').slice(1)}
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 text-right">

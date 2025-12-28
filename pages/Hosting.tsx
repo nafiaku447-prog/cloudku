@@ -60,8 +60,10 @@ const Hosting: React.FC = () => {
     // Filtered websites using useMemo for performance
     const filteredWebsites = useMemo(() => {
         return websites.filter(website => {
-            const matchesSearch = website.domain.toLowerCase().includes(searchTerm.toLowerCase());
-            const matchesFilter = filterStatus === 'all' || website.status === filterStatus;
+            const domain = website.domain || '';
+            const status = website.status || '';
+            const matchesSearch = domain.toLowerCase().includes(searchTerm.toLowerCase());
+            const matchesFilter = filterStatus === 'all' || status === filterStatus;
             return matchesSearch && matchesFilter;
         });
     }, [websites, searchTerm, filterStatus]);
