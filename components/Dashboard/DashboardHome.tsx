@@ -89,7 +89,7 @@ const DashboardHome: React.FC = () => {
                         <div className="flex-1">
                             <p className="font-semibold text-orange-900 text-sm">Domain Expiring Soon</p>
                             <p className="text-sm text-orange-700 mt-1">example.com expires in 15 days</p>
-                            <button onClick={() => navigate('/dashboard/domains')} className="text-xs text-orange-600 hover:underline font-medium mt-2">
+                            <button onClick={() => navigate('/domains')} className="text-xs text-orange-600 hover:underline font-medium mt-2">
                                 Renew Now →
                             </button>
                         </div>
@@ -106,7 +106,7 @@ const DashboardHome: React.FC = () => {
                         <div className="flex-1">
                             <p className="font-semibold text-blue-900 text-sm">Storage Reaching Limit</p>
                             <p className="text-sm text-blue-700 mt-1">Using 24% of available storage</p>
-                            <button onClick={() => navigate('/dashboard/files')} className="text-xs text-blue-600 hover:underline font-medium mt-2">
+                            <button onClick={() => navigate('/files')} className="text-xs text-blue-600 hover:underline font-medium mt-2">
                                 Manage Files →
                             </button>
                         </div>
@@ -117,7 +117,7 @@ const DashboardHome: React.FC = () => {
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div
-                    onClick={() => navigate('/dashboard/hosting')}
+                    onClick={() => navigate('/hosting')}
                     className="group bg-white rounded-xl border border-gray-200 p-6 hover:shadow-xl hover:border-blue-300 transition-all cursor-pointer"
                 >
                     <div className="flex items-center justify-between mb-4">
@@ -139,7 +139,7 @@ const DashboardHome: React.FC = () => {
                 </div>
 
                 <div
-                    onClick={() => navigate('/dashboard/domains')}
+                    onClick={() => navigate('/domains')}
                     className="group bg-white rounded-xl border border-gray-200 p-6 hover:shadow-xl hover:border-green-300 transition-all cursor-pointer"
                 >
                     <div className="flex items-center justify-between mb-4">
@@ -156,7 +156,7 @@ const DashboardHome: React.FC = () => {
                 </div>
 
                 <div
-                    onClick={() => navigate('/dashboard/email')}
+                    onClick={() => navigate('/email')}
                     className="group bg-white rounded-xl border border-gray-200 p-6 hover:shadow-xl hover:border-orange-300 transition-all cursor-pointer"
                 >
                     <div className="flex items-center justify-between mb-4">
@@ -173,7 +173,7 @@ const DashboardHome: React.FC = () => {
                 </div>
 
                 <div
-                    onClick={() => navigate('/dashboard/databases')}
+                    onClick={() => navigate('/databases')}
                     className="group bg-white rounded-xl border border-gray-200 p-6 hover:shadow-xl hover:border-purple-300 transition-all cursor-pointer"
                 >
                     <div className="flex items-center justify-between mb-4">
@@ -214,7 +214,7 @@ const DashboardHome: React.FC = () => {
                                 <button className="text-xs text-blue-600 hover:underline font-medium whitespace-nowrap">Enable →</button>
                             </div>
 
-                            <div className="flex items-start gap-3 p-3 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors cursor-pointer" onClick={() => navigate('/dashboard/ssl')}>
+                            <div className="flex items-start gap-3 p-3 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors cursor-pointer" onClick={() => navigate('/ssl')}>
                                 <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center flex-shrink-0">
                                     <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
@@ -398,7 +398,7 @@ const DashboardHome: React.FC = () => {
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <button
-                                onClick={() => navigate('/dashboard/hosting')}
+                                onClick={() => navigate('/hosting')}
                                 className="flex items-center gap-4 p-4 border-2 border-gray-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-all text-left group"
                             >
                                 <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center flex-shrink-0 shadow-lg group-hover:scale-110 transition-transform">
@@ -413,7 +413,7 @@ const DashboardHome: React.FC = () => {
                             </button>
 
                             <button
-                                onClick={() => navigate('/dashboard/domains')}
+                                onClick={() => navigate('/domains')}
                                 className="flex items-center gap-4 p-4 border-2 border-gray-200 rounded-lg hover:border-green-400 hover:bg-green-50 transition-all text-left group"
                             >
                                 <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center flex-shrink-0 shadow-lg group-hover:scale-110 transition-transform">
@@ -428,7 +428,7 @@ const DashboardHome: React.FC = () => {
                             </button>
 
                             <button
-                                onClick={() => navigate('/dashboard/ssl')}
+                                onClick={() => navigate('/ssl')}
                                 className="flex items-center gap-4 p-4 border-2 border-gray-200 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-all text-left group"
                             >
                                 <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0 shadow-lg group-hover:scale-110 transition-transform">
@@ -443,7 +443,7 @@ const DashboardHome: React.FC = () => {
                             </button>
 
                             <button
-                                onClick={() => navigate('/dashboard/support')}
+                                onClick={() => navigate('/support')}
                                 className="flex items-center gap-4 p-4 border-2 border-gray-200 rounded-lg hover:border-teal-400 hover:bg-teal-50 transition-all text-left group"
                             >
                                 <div className="w-12 h-12 bg-gradient-to-br from-teal-500 to-teal-600 rounded-lg flex items-center justify-center flex-shrink-0 shadow-lg group-hover:scale-110 transition-transform">
@@ -538,7 +538,7 @@ const DashboardHome: React.FC = () => {
                                     <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full font-semibold">15 days</span>
                                 </div>
                                 <p className="text-xs text-gray-600 mb-2">Domain expires Feb 12, 2025</p>
-                                <button onClick={() => navigate('/dashboard/domains')} className="text-xs text-orange-600 hover:underline font-medium">Renew Now →</button>
+                                <button onClick={() => navigate('/domains')} className="text-xs text-orange-600 hover:underline font-medium">Renew Now →</button>
                             </div>
 
                             <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
@@ -547,7 +547,7 @@ const DashboardHome: React.FC = () => {
                                     <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-semibold">30 days</span>
                                 </div>
                                 <p className="text-xs text-gray-600 mb-2">Auto-renew enabled</p>
-                                <button onClick={() => navigate('/dashboard/ssl')} className="text-xs text-blue-600 hover:underline font-medium">View Details →</button>
+                                <button onClick={() => navigate('/ssl')} className="text-xs text-blue-600 hover:underline font-medium">View Details →</button>
                             </div>
 
                             <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg">
@@ -556,7 +556,7 @@ const DashboardHome: React.FC = () => {
                                     <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full font-semibold">12 days</span>
                                 </div>
                                 <p className="text-xs text-gray-600 mb-2">Next billing: Feb 9, 2025</p>
-                                <button onClick={() => navigate('/dashboard/billing')} className="text-xs text-purple-600 hover:underline font-medium">Manage Billing →</button>
+                                <button onClick={() => navigate('/billing')} className="text-xs text-purple-600 hover:underline font-medium">Manage Billing →</button>
                             </div>
                         </div>
                     </div>
@@ -574,7 +574,7 @@ const DashboardHome: React.FC = () => {
                                 </div>
                             </div>
                             <button
-                                onClick={() => navigate('/dashboard/billing')}
+                                onClick={() => navigate('/billing')}
                                 className="w-full px-4 py-2.5 bg-[#5865F2] text-white text-sm font-semibold rounded-lg hover:bg-[#4F46E5] transition-colors shadow-lg hover:shadow-xl"
                             >
                                 Manage Billing
@@ -614,7 +614,7 @@ const DashboardHome: React.FC = () => {
                         <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Quick Links</h3>
                         <div className="space-y-1">
                             <button
-                                onClick={() => navigate('/dashboard/files')}
+                                onClick={() => navigate('/files')}
                                 className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
                             >
                                 <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -623,7 +623,7 @@ const DashboardHome: React.FC = () => {
                                 File Manager
                             </button>
                             <button
-                                onClick={() => navigate('/dashboard/billing')}
+                                onClick={() => navigate('/billing')}
                                 className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
                             >
                                 <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -632,7 +632,7 @@ const DashboardHome: React.FC = () => {
                                 Billing & Invoices
                             </button>
                             <button
-                                onClick={() => navigate('/dashboard/support')}
+                                onClick={() => navigate('/support')}
                                 className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
                             >
                                 <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

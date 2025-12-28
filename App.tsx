@@ -118,14 +118,14 @@ const App: React.FC = () => {
 
             {/* Dashboard (Protected) */}
             <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/dashboard/hosting" element={<HostingPage />} />
-            <Route path="/dashboard/domains" element={<DomainsPage />} />
-            <Route path="/dashboard/email" element={<EmailPage />} />
-            <Route path="/dashboard/databases" element={<DatabasesPage />} />
-            <Route path="/dashboard/ssl" element={<SSLPage />} />
-            <Route path="/dashboard/files" element={<FileManagerPage />} />
-            <Route path="/dashboard/billing" element={<BillingPage />} />
-            <Route path="/dashboard/support" element={<SupportPage />} />
+            <Route path="/hosting" element={<HostingPage />} />
+            <Route path="/domains" element={<DomainsPage />} />
+            <Route path="/email" element={<EmailPage />} />
+            <Route path="/databases" element={<DatabasesPage />} />
+            <Route path="/ssl" element={<SSLPage />} />
+            <Route path="/files" element={<FileManagerPage />} />
+            <Route path="/billing" element={<BillingPage />} />
+            <Route path="/support" element={<SupportPage />} />
 
             {/* Redirect unknown routes to home */}
             <Route path="*" element={<Navigate to="/" replace />} />
