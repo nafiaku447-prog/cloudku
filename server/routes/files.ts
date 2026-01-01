@@ -10,7 +10,9 @@ import {
     readFile,
     updateFile,
     renameFile,
-    extractZip
+    extractZip,
+    copyFiles,
+    moveFiles
 } from '../controllers/fileController';
 
 const router = express.Router();
@@ -54,4 +56,11 @@ router.post('/folder', createFolder);
 // Extract ZIP file
 router.post('/extract', extractZip);
 
+// Copy files/folders
+router.post('/copy', copyFiles);
+
+// Move files/folders
+router.post('/move', moveFiles);
+
 export default router;
+

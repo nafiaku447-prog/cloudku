@@ -77,44 +77,81 @@ export const listFiles = async (req: AuthRequest, res: Response) => {
 
 // Upload file
 export const uploadFile = async (req: AuthRequest, res: Response) => {
+    console.log('=== UPLOAD FILE REQUEST START ===');
+    console.log('Request headers:', req.headers);
+    console.log('Request body:', req.body);
+    console.log('Has file:', !!req.file);
+
     try {
         const userId = req.user?.id?.toString() || 'default';
         const targetPath = req.body.path || '/public_html';
 
+        console.log('User ID:', userId);
+        console.log('Target path:', targetPath);
+
         if (!req.file) {
+            console.log('ERROR: No file in request');
             return res.status(400).json({ message: 'No file provided' });
         }
 
+        console.log('File details:', {
+            originalname: req.file.originalname,
+            mimetype: req.file.mimetype,
+            size: req.file.size,
+            bufferLength: req.file.buffer?.length
+        });
+
         await ensureUserDirectory(userId);
+        console.log('User directory ensured');
 
         // Get directory path and ensure it exists
         const dirPath = path.join(getUserFilesPath(userId), targetPath);
         const fullPath = path.join(dirPath, req.file.originalname);
 
+        console.log('Dir path:', dirPath);
+        console.log('Full file path:', fullPath);
+
         // Security check
         const userBasePath = getUserFilesPath(userId);
         if (!fullPath.startsWith(userBasePath)) {
+            console.log('ERROR: Security check failed - path traversal attempt');
             return res.status(403).json({ message: 'Access denied' });
         }
 
         // Create directory structure if it doesn't exist
         console.log('Creating directory:', dirPath);
         await fs.mkdir(dirPath, { recursive: true });
+        console.log('Directory created/verified');
 
         // Write file
-        console.log('Writing file:', fullPath);
+        console.log('Writing file to:', fullPath);
         await fs.writeFile(fullPath, req.file.buffer);
+        console.log('File written successfully');
 
-        res.json({
+        const response = {
             message: 'File uploaded successfully',
             file: {
                 name: req.file.originalname,
-                size: formatBytes(req.file.size)
+                size: formatBytes(req.file.size),
+                path: fullPath
             }
-        });
+        };
+
+        console.log('=== UPLOAD SUCCESS ===');
+        console.log('Response:', response);
+
+        res.json(response);
     } catch (error) {
-        console.error('Upload error:', error);
-        res.status(500).json({ message: 'Failed to upload file', error: (error as Error).message });
+        console.error('=== UPLOAD ERROR ===');
+        console.error('Error type:', error instanceof Error ? error.constructor.name : typeof error);
+        console.error('Error message:', error instanceof Error ? error.message : String(error));
+        console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+
+        res.status(500).json({
+            message: 'Failed to upload file',
+            error: error instanceof Error ? error.message : 'Unknown error',
+            errorType: error instanceof Error ? error.constructor.name : typeof error
+        });
     }
 };
 
@@ -368,6 +405,164 @@ export const extractZip = async (req: AuthRequest, res: Response) => {
     }
 };
 
+// Copy files or folders
+export const copyFiles = async (req: AuthRequest, res: Response) => {
+    try {
+        const userId = req.user?.id?.toString() || 'default';
+        const { sourcePaths, targetPath } = req.body;
+
+        if (!sourcePaths || !Array.isArray(sourcePaths) || sourcePaths.length === 0) {
+            return res.status(400).json({ message: 'Source paths required' });
+        }
+
+        if (!targetPath) {
+            return res.status(400).json({ message: 'Target path required' });
+        }
+
+        const userBasePath = getUserFilesPath(userId);
+        const fullTargetPath = path.join(userBasePath, targetPath);
+
+        // Security check for target
+        if (!fullTargetPath.startsWith(userBasePath)) {
+            return res.status(403).json({ message: 'Access denied' });
+        }
+
+        // Ensure target directory exists
+        await fs.mkdir(fullTargetPath, { recursive: true });
+
+        let copiedCount = 0;
+        const errors: string[] = [];
+
+        for (const sourcePath of sourcePaths) {
+            try {
+                const fullSourcePath = path.join(userBasePath, sourcePath);
+
+                // Security check for source
+                if (!fullSourcePath.startsWith(userBasePath)) {
+                    errors.push(`Access denied: ${sourcePath}`);
+                    continue;
+                }
+
+                const fileName = path.basename(fullSourcePath);
+                const fullDestPath = path.join(fullTargetPath, fileName);
+
+                // Check if source exists
+                try {
+                    await fs.access(fullSourcePath);
+                } catch {
+                    errors.push(`Source not found: ${sourcePath}`);
+                    continue;
+                }
+
+                // Copy file or directory
+                const stats = await fs.stat(fullSourcePath);
+                if (stats.isDirectory()) {
+                    await copyDirectory(fullSourcePath, fullDestPath);
+                } else {
+                    await fs.copyFile(fullSourcePath, fullDestPath);
+                }
+                copiedCount++;
+            } catch (err) {
+                errors.push(`Failed to copy ${sourcePath}: ${(err as Error).message}`);
+            }
+        }
+
+        res.json({
+            message: `Copied ${copiedCount} of ${sourcePaths.length} item(s)`,
+            copiedCount,
+            errors: errors.length > 0 ? errors : undefined
+        });
+    } catch (error) {
+        console.error('Copy files error:', error);
+        res.status(500).json({ message: 'Failed to copy files', error: (error as Error).message });
+    }
+};
+
+// Move files or folders
+export const moveFiles = async (req: AuthRequest, res: Response) => {
+    try {
+        const userId = req.user?.id?.toString() || 'default';
+        const { sourcePaths, targetPath } = req.body;
+
+        if (!sourcePaths || !Array.isArray(sourcePaths) || sourcePaths.length === 0) {
+            return res.status(400).json({ message: 'Source paths required' });
+        }
+
+        if (!targetPath) {
+            return res.status(400).json({ message: 'Target path required' });
+        }
+
+        const userBasePath = getUserFilesPath(userId);
+        const fullTargetPath = path.join(userBasePath, targetPath);
+
+        // Security check for target
+        if (!fullTargetPath.startsWith(userBasePath)) {
+            return res.status(403).json({ message: 'Access denied' });
+        }
+
+        // Ensure target directory exists
+        await fs.mkdir(fullTargetPath, { recursive: true });
+
+        let movedCount = 0;
+        const errors: string[] = [];
+
+        for (const sourcePath of sourcePaths) {
+            try {
+                const fullSourcePath = path.join(userBasePath, sourcePath);
+
+                // Security check for source
+                if (!fullSourcePath.startsWith(userBasePath)) {
+                    errors.push(`Access denied: ${sourcePath}`);
+                    continue;
+                }
+
+                const fileName = path.basename(fullSourcePath);
+                const fullDestPath = path.join(fullTargetPath, fileName);
+
+                // Check if source exists
+                try {
+                    await fs.access(fullSourcePath);
+                } catch {
+                    errors.push(`Source not found: ${sourcePath}`);
+                    continue;
+                }
+
+                // Move (rename) file or directory
+                await fs.rename(fullSourcePath, fullDestPath);
+                movedCount++;
+            } catch (err) {
+                errors.push(`Failed to move ${sourcePath}: ${(err as Error).message}`);
+            }
+        }
+
+        res.json({
+            message: `Moved ${movedCount} of ${sourcePaths.length} item(s)`,
+            movedCount,
+            errors: errors.length > 0 ? errors : undefined
+        });
+    } catch (error) {
+        console.error('Move files error:', error);
+        res.status(500).json({ message: 'Failed to move files', error: (error as Error).message });
+    }
+};
+
+// Helper: Copy directory recursively
+const copyDirectory = async (source: string, destination: string): Promise<void> => {
+    await fs.mkdir(destination, { recursive: true });
+    const items = await fs.readdir(source, { withFileTypes: true });
+
+    for (const item of items) {
+        const srcPath = path.join(source, item.name);
+        const destPath = path.join(destination, item.name);
+
+        if (item.isDirectory()) {
+            await copyDirectory(srcPath, destPath);
+        } else {
+            await fs.copyFile(srcPath, destPath);
+        }
+    }
+};
+
 // Helper functions
 const formatBytes = (bytes: number): string => {
     if (bytes === 0) return '0 B';
@@ -422,3 +617,4 @@ const getDirectoryStats = async (dirPath: string): Promise<{ fileCount: number, 
 
     return { fileCount, folderCount, totalSize };
 };
+

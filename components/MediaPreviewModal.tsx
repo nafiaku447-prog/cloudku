@@ -32,6 +32,14 @@ const MediaPreviewModal: React.FC<MediaPreviewModalProps> = ({
 
         const loadMedia = async () => {
             setLoading(true);
+
+            // Create abort controller for timeout
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => {
+                controller.abort();
+                console.error('Media load timeout after 10 seconds');
+            }, 10000); // 10 second timeout
+
             try {
                 const token = getToken();
 
@@ -43,12 +51,14 @@ const MediaPreviewModal: React.FC<MediaPreviewModalProps> = ({
                 }
 
                 const cleanUrl = initialMediaUrl.split('&token=')[0];
+                console.log('Clean URL:', cleanUrl);
 
                 const response = await fetch(cleanUrl, {
                     method: 'GET',
                     headers: {
                         'Authorization': `Bearer ${token}`
-                    }
+                    },
+                    signal: controller.signal
                 });
 
                 console.log('Response status:', response.status);
@@ -60,13 +70,28 @@ const MediaPreviewModal: React.FC<MediaPreviewModalProps> = ({
                 const blob = await response.blob();
                 console.log('Blob size:', blob.size, 'Type:', blob.type);
 
+                if (blob.size === 0) {
+                    throw new Error('Received empty file');
+                }
+
                 const url = URL.createObjectURL(blob);
                 setMediaUrl(url);
+                console.log('Media loaded successfully');
             } catch (error) {
                 console.error('Media load error:', error);
+
+                if (error instanceof Error) {
+                    if (error.name === 'AbortError') {
+                        console.error('Request timeout - taking too long to load');
+                    }
+                    alert(`Failed to load media: ${error.message}`);
+                }
+
                 setMediaUrl('');
             } finally {
+                clearTimeout(timeoutId);
                 setLoading(false);
+                console.log('Loading finished');
             }
         };
 
@@ -91,7 +116,7 @@ const MediaPreviewModal: React.FC<MediaPreviewModalProps> = ({
                     if (currentIndex > 0) onNavigate('prev');
                     break;
                 case 'ArrowRight':
-                    if (currentIndex < medias.length - 1) onNavigate('next');
+                    if (currentIndex < (medias?.length || 0) - 1) onNavigate('next');
                     break;
                 case '+':
                 case '=':
@@ -105,7 +130,7 @@ const MediaPreviewModal: React.FC<MediaPreviewModalProps> = ({
 
         window.addEventListener('keydown', handleKeyPress);
         return () => window.removeEventListener('keydown', handleKeyPress);
-    }, [isOpen, currentIndex, medias.length, onClose, onNavigate, mediaType]);
+    }, [isOpen, currentIndex, medias?.length, onClose, onNavigate, mediaType]);
 
     useEffect(() => {
         setZoom(1);
@@ -139,7 +164,7 @@ const MediaPreviewModal: React.FC<MediaPreviewModalProps> = ({
                         <div>
                             <h2 className="text-lg font-bold text-white">{mediaName}</h2>
                             <p className="text-sm text-gray-300">
-                                {mediaType === 'video' ? 'Video' : 'Image'} · {currentIndex + 1} of {medias.length}
+                                {mediaType === 'video' ? 'Video' : 'Image'} · {currentIndex + 1} of {medias?.length || 0}
                             </p>
                         </div>
                     </div>
@@ -244,7 +269,7 @@ const MediaPreviewModal: React.FC<MediaPreviewModalProps> = ({
                         )}
                     </div>
 
-                    {currentIndex < medias.length - 1 && (
+                    {currentIndex < (medias?.length || 0) - 1 && (
                         <button
                             onClick={() => onNavigate('next')}
                             className="absolute right-4 z-10 p-3 bg-black bg-opacity-50 hover:bg-opacity-70 text-white rounded-full transition-all transform hover:scale-110"
