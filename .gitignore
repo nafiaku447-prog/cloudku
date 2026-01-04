@@ -1,8 +1,9 @@
 node_modules
 dist
 build
-user_files
+.env
 .env.local
+user_files
 .DS_Store
 *.log
 npm-debug.log*

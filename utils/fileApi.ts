@@ -359,3 +359,22 @@ export const changePermissions = async (path: string, mode: string) => {
     return response.json();
 };
 
+export const compressFiles = async (paths: string[], archiveName: string) => {
+    const token = getToken();
+    const response = await fetch(`${API_URL}/api/files/compress`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ paths, archiveName }),
+    });
+
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to compress files');
+    }
+
+    return response.json();
+};
+

@@ -10,6 +10,10 @@ import { testConnection } from './db/pool';
 import authRoutes from './routes/auth';
 import hostingRoutes from './routes/hosting';
 import fileRoutes from './routes/files';
+import domainRoutes from './routes/domains';
+import dnsRoutes from './routes/dns';
+import sslRoutes from './routes/ssl';
+import databaseRoutes from './routes/databases';
 
 // Load environment variables
 dotenv.config({ path: '.env.local' });
@@ -51,6 +55,10 @@ app.get('/health', (req: Request, res: Response) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/hosting', hostingRoutes);
 app.use('/api/files', fileRoutes);
+app.use('/api/domains', domainRoutes);
+app.use('/api/dns', dnsRoutes);
+app.use('/api/ssl', sslRoutes);
+app.use('/api/databases', databaseRoutes);
 
 // 404 handler
 app.use((req: Request, res: Response) => {
@@ -83,7 +91,7 @@ const startServer = async () => {
         }
 
         // Start listening
-        app.listen(PORT, () => {
+        app.listen(PORT, async () => {
             console.log('');
             console.log('='.repeat(60));
             console.log('🚀 HostModern API Server');
@@ -102,6 +110,10 @@ const startServer = async () => {
             console.log(`  GET    /api/auth/me         - Get current user (auth required)`);
             console.log('='.repeat(60));
             console.log('');
+
+            // Start Cron Jobs
+            const { startSSLRenewalCron } = await import('./cron/sslRenewal');
+            startSSLRenewalCron();
         });
     } catch (error) {
         console.error('❌ Failed to start server:', error);

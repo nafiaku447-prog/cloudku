@@ -180,8 +180,8 @@ const FileManagerToolbar: React.FC<FileManagerToolbarProps> = ({
                     <button
                         onClick={onToggleFilterPanel}
                         className={`px-4 py-2 border text-sm font-medium rounded-lg transition-all flex items-center gap-2 ${showFilterPanel || hasActiveFilters
-                                ? 'bg-blue-500 text-white border-blue-500 shadow-lg'
-                                : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'
+                            ? 'bg-blue-500 text-white border-blue-500 shadow-lg'
+                            : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'
                             }`}
                     >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

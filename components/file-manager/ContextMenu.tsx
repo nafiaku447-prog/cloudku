@@ -18,6 +18,7 @@ interface ContextMenuProps {
     onRefresh: () => void;
     onUpload: () => void;
     onPermissions: (file: FileItem) => void;
+    onCompress: () => void;
 }
 
 const ContextMenu: React.FC<ContextMenuProps> = ({
@@ -35,7 +36,8 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
     onPaste,
     onRefresh,
     onUpload,
-    onPermissions
+    onPermissions,
+    onCompress
 }) => {
 
     const menuRef = useRef<HTMLDivElement>(null);
@@ -123,6 +125,22 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
                                 <span className="text-sm font-medium text-gray-700">Edit</span>
                             </button>
                         )}
+
+                    <div className="border-t border-gray-100 my-1"></div>
+
+                    {/* Compress to ZIP */}
+                    <button
+                        onClick={() => {
+                            onCompress();
+                            onClose();
+                        }}
+                        className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-3 transition-colors"
+                    >
+                        <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z" />
+                        </svg>
+                        <span className="text-sm font-medium text-gray-700">Compress to ZIP</span>
+                    </button>
 
                     <div className="border-t border-gray-100 my-1"></div>
 

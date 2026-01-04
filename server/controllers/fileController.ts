@@ -729,3 +729,66 @@ export const changePermissions = async (req: AuthRequest, res: Response) => {
         res.status(500).json({ message: 'Failed to change permissions', error: (error as Error).message });
     }
 };
+
+// Compress Files to ZIP
+export const compressFiles = async (req: AuthRequest, res: Response) => {
+    try {
+        const userId = req.user?.id?.toString() || 'default';
+        const { paths, archiveName } = req.body;
+
+        if (!paths || !Array.isArray(paths) || paths.length === 0) {
+            return res.status(400).json({ message: 'Paths array is required' });
+        }
+
+        if (!archiveName || typeof archiveName !== 'string') {
+            return res.status(400).json({ message: 'Archive name is required' });
+        }
+
+        const userBasePath = getUserFilesPath(userId);
+
+        // Ensure archive name ends with .zip
+        const finalArchiveName = archiveName.endsWith('.zip') ? archiveName : `${archiveName}.zip`;
+        const archivePath = path.join(userBasePath, finalArchiveName);
+
+        // Security check for archive path
+        if (!archivePath.startsWith(userBasePath)) {
+            return res.status(403).json({ message: 'Access denied' });
+        }
+
+        const zip = new AdmZip();
+
+        // Add each path to zip
+        for (const filePath of paths) {
+            const fullPath = path.join(userBasePath, filePath);
+
+            // Security check
+            if (!fullPath.startsWith(userBasePath)) {
+                return res.status(403).json({ message: 'Access denied' });
+            }
+
+            const stats = await fs.stat(fullPath);
+
+            if (stats.isDirectory()) {
+                // Add folder recursively
+                zip.addLocalFolder(fullPath, path.basename(fullPath));
+            } else {
+                // Add file
+                zip.addLocalFile(fullPath);
+            }
+        }
+
+        // Write ZIP file
+        zip.writeZip(archivePath);
+
+        res.json({
+            message: `Successfully compressed ${paths.length} item(s) to ${finalArchiveName}`,
+            archiveName: finalArchiveName
+        });
+    } catch (error) {
+        console.error('Compress error:', error);
+        res.status(500).json({
+            message: 'Failed to compress files',
+            error: (error as Error).message
+        });
+    }
+};

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import ProtectedDashboard from '../components/ProtectedDashboard';
-import { listFiles, uploadFile, downloadFile, deleteFile, createFolder, extractZipFile, renameFile, copyFiles, moveFiles, gitClone, changePermissions } from '../utils/fileApi';
+import { listFiles, uploadFile, downloadFile, deleteFile, createFolder, extractZipFile, renameFile, copyFiles, moveFiles, gitClone, changePermissions, compressFiles } from '../utils/fileApi';
 import { readFileContent, updateFileContent } from '../utils/fileApi';
 import toast, { Toaster } from 'react-hot-toast';
 import UploadProgressBar from '../components/UploadProgressBar';
@@ -8,6 +8,7 @@ import ConfirmationModal from '../components/ConfirmationModal';
 import InputModal from '../components/InputModal';
 import ExtractModal from '../components/ExtractModal';
 import PermissionsModal from '../components/PermissionsModal';
+import CompressModal from '../components/CompressModal';
 import { isImageFile, isVideoFile, validateFileName } from '../features/file-manager/utils/file-helpers';
 import { buildMediaList, findMediaIndex } from '../features/file-manager/utils/media-helpers';
 import { buildBreadcrumbs, navigateToBreadcrumb, navigateToParent, navigateToFolder, buildFilePath } from '../features/file-manager/utils/path-helpers';
@@ -123,6 +124,16 @@ const FileManagerPage: React.FC = () => {
         fileName: '',
         currentMode: '644',
         path: ''
+    });
+
+    const [compressModal, setCompressModal] = useState<{
+        show: boolean;
+        paths: string[];
+        defaultName: string;
+    }>({
+        show: false,
+        paths: [],
+        defaultName: `archive_${new Date().toISOString().split('T')[0]}`
     });
 
     const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -346,6 +357,21 @@ const FileManagerPage: React.FC = () => {
             fileName: file.name,
             currentMode: file.permissions || '644',
             path: buildFilePath(currentPath, file.name)
+        });
+    };
+
+    const handleCompress = () => {
+        const selectedFileObjects = files.filter(f => selectedFiles.includes(f.id));
+        if (selectedFileObjects.length === 0) {
+            toast.error('Please select files to compress');
+            return;
+        }
+
+        const paths = selectedFileObjects.map(f => buildFilePath(currentPath, f.name));
+        setCompressModal({
+            show: true,
+            paths,
+            defaultName: `archive_${new Date().toISOString().split('T')[0]}`
         });
     };
 
@@ -1124,6 +1150,7 @@ const FileManagerPage: React.FC = () => {
                 }}
                 onUpload={handleUploadClick}
                 onPermissions={handlePermissions}
+                onCompress={handleCompress}
             />
 
 
@@ -1217,6 +1244,25 @@ const FileManagerPage: React.FC = () => {
                     }
                 }}
                 onCancel={() => setPermissionsModal({ ...permissionsModal, show: false })}
+            />
+
+            {/* Compress Modal */}
+            <CompressModal
+                show={compressModal.show}
+                fileCount={compressModal.paths.length}
+                defaultName={compressModal.defaultName}
+                onConfirm={async (archiveName) => {
+                    const toastId = toast.loading('Creating ZIP archive...', { position: 'bottom-right' });
+                    try {
+                        await compressFiles(compressModal.paths, archiveName);
+                        await loadFiles();
+                        toast.success(`Archive created successfully! 📦`, { id: toastId, position: 'bottom-right' });
+                        setCompressModal({ ...compressModal, show: false });
+                    } catch (err) {
+                        toast.error('Failed to compress: ' + (err instanceof Error ? err.message : 'Unknown error'), { id: toastId, position: 'bottom-right' });
+                    }
+                }}
+                onCancel={() => setCompressModal({ ...compressModal, show: false })}
             />
 
         </ProtectedDashboard >
