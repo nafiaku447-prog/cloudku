@@ -13,6 +13,7 @@ import AuthModal from './components/AuthModal';
 import PromoSection from './components/PromoSection';
 import ServerLocations from './components/ServerLocations';
 import TechStack from './components/TechStack';
+import TrustSection from './components/TrustSection';
 import DashboardPage from './pages/Dashboard';
 import { isAuthenticated, githubLogin, saveToken } from './utils/authApi';
 import HostingPage from './pages/Hosting';
@@ -25,6 +26,9 @@ import BillingPage from './pages/Billing';
 import SupportPage from './pages/Support';
 import TemplatesPage from './pages/Templates';
 import ProfilePage from './pages/Profile';
+import CartPage from './pages/Cart';
+import SolutionsPage from './pages/Solutions';
+import BantuanPage from './pages/Bantuan';
 import GoogleCallback from './pages/GoogleCallback';
 import SocialLoginLoading from './components/SocialLoginLoading';
 import { Toaster } from 'react-hot-toast';
@@ -48,6 +52,7 @@ const LandingPage: React.FC<{
 
       <main className="flex-grow">
         <Hero onOpenAuth={() => onOpenAuth('register')} />
+        <TrustSection />
         <TechStack />
         <Features />
         <ServerLocations />
@@ -213,6 +218,10 @@ const App: React.FC = () => {
             <Route path="/support" element={<SupportPage />} />
             <Route path="/templates" element={<TemplatesPage />} />
             <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/cart" element={<CartPage />} />
+            <Route path="/solutions" element={<SolutionsPage />} />
+        <Route path="/bantuan" element={<BantuanPage />} />
+
 
             {/* OAuth Callbacks */}
             <Route path="/auth/google/callback" element={<GoogleCallback />} />

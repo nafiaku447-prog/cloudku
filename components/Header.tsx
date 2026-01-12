@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 
 interface HeaderProps {
   user: { name: string; email: string } | null;
   onOpenAuth: (mode: 'login' | 'register') => void;
   onLogout: () => void;
+  isSolid?: boolean;
 }
 
-const Header: React.FC<HeaderProps> = ({ user, onOpenAuth, onLogout }) => {
+const Header: React.FC<HeaderProps> = ({ user, onOpenAuth, onLogout, isSolid = false }) => {
+  const location = useLocation();
   const [isScrolled, setIsScrolled] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -42,16 +45,21 @@ const Header: React.FC<HeaderProps> = ({ user, onOpenAuth, onLogout }) => {
     { name: 'Beranda', href: '#' },
     { name: 'Hosting', href: '#hosting' },
     { name: 'Domain', href: '#domain' },
-    { name: 'AI Assistant', href: '#ai-assistant' },
-    { name: 'Promo', href: '#promo' },
-    { name: 'Bantuan', href: '#faq' },
+    { name: 'Aplikasi', href: '/solutions', isNew: true },
+
+    { name: 'Bantuan', href: '/bantuan' },
   ];
 
   const handleSmoothScroll = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
-    e.preventDefault();
     setMobileMenuOpen(false);
     setActiveMegamenu(null);
 
+    // If we are not on the landing page, we should navigate back to it with the hash
+    if (location.pathname !== '/') {
+      return; // Let the default anchor link behavior navigate to /#hash
+    }
+
+    e.preventDefault();
     if (href === '#') {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
@@ -157,10 +165,12 @@ const Header: React.FC<HeaderProps> = ({ user, onOpenAuth, onLogout }) => {
     ]
   };
 
+  const showSolid = isScrolled || mobileMenuOpen || isSolid;
+
   return (
     <header 
       className={`fixed top-0 left-0 right-0 z-[60] transition-all duration-500 ${
-        isScrolled || mobileMenuOpen ? 'bg-white shadow-xl py-3' : 'bg-transparent py-6'
+        showSolid ? 'bg-white shadow-xl py-3' : 'bg-transparent py-6'
       }`}
     >
       {/* Scroll Progress Bar */}
@@ -181,9 +191,22 @@ const Header: React.FC<HeaderProps> = ({ user, onOpenAuth, onLogout }) => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
             </svg>
           </div>
-          <span className={`text-2xl font-[800] tracking-tight transition-colors duration-300 ${isScrolled || mobileMenuOpen ? 'text-slate-900' : 'text-white'}`}>
+          <span className={`text-2xl font-[800] tracking-tight transition-colors duration-300 ${showSolid ? 'text-slate-900' : 'text-white'}`}>
             HostModern
           </span>
+          <div className="flex flex-col -mt-1 ml-1">
+            <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-md leading-none border transition-colors ${
+              showSolid 
+                ? 'bg-blue-50 text-blue-600 border-blue-100' 
+                : 'bg-white/10 text-white/80 border-white/20'
+            }`}>
+              v2.4.0
+            </span>
+            <div className={`flex items-center gap-1 mt-0.5 ml-0.5 transition-opacity duration-300 ${showSolid ? 'opacity-100' : 'opacity-60'}`}>
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span className={`text-[8px] font-bold uppercase tracking-wider ${showSolid ? 'text-slate-400' : 'text-white'}`}>ID-JKT</span>
+            </div>
+          </div>
         </div>
 
         {/* Desktop Nav */}
@@ -198,21 +221,38 @@ const Header: React.FC<HeaderProps> = ({ user, onOpenAuth, onLogout }) => {
                 onMouseEnter={() => hasMegamenu && setActiveMegamenu(link.name)}
                 onMouseLeave={() => setActiveMegamenu(null)}
               >
-                <a 
-                  href={link.href}
-                  onClick={(e) => handleSmoothScroll(e, link.href)}
-                  className={`text-[15px] font-bold tracking-wide transition-all relative py-2 flex items-center gap-1.5 ${
-                    isScrolled ? 'text-slate-600 hover:text-[#2d6cea]' : 'text-white/90 hover:text-white'
-                  }`}
-                >
-                  {link.name}
-                  {hasMegamenu && (
-                    <svg className={`w-3.5 h-3.5 transition-transform duration-300 ${activeMegamenu === link.name ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7" />
-                    </svg>
-                  )}
-                  <span className={`absolute bottom-0 left-0 w-0 h-0.5 bg-[#2d6cea] transition-all duration-300 group-hover/megamenu:w-full ${!isScrolled && 'bg-white'}`}></span>
-                </a>
+                {link.href.startsWith('#') ? (
+                  <a 
+                    href={location.pathname === '/' ? link.href : `/${link.href}`}
+                    onClick={(e) => handleSmoothScroll(e, link.href)}
+                    className={`text-[15px] font-bold tracking-wide transition-all relative py-2 flex items-center gap-1.5 ${
+                      showSolid ? 'text-blue-600 hover:text-blue-700' : 'text-white/90 hover:text-white'
+                    }`}
+                  >
+                    {link.name}
+                    {hasMegamenu && (
+                      <svg className={`w-3.5 h-3.5 transition-transform duration-300 ${activeMegamenu === link.name ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    )}
+                    <span className={`absolute bottom-0 left-0 w-0 h-0.5 bg-blue-600 transition-all duration-300 group-hover/megamenu:w-full ${!showSolid && 'bg-white'}`}></span>
+                  </a>
+                ) : (
+                  <Link 
+                    to={link.href}
+                    className={`text-[15px] font-bold tracking-wide transition-all relative py-2 flex items-center gap-2 ${
+                      showSolid ? 'text-blue-600 hover:text-blue-700' : 'text-white/90 hover:text-white'
+                    }`}
+                  >
+                    {link.name}
+                    {link.isNew && (
+                      <span className="bg-rose-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-md uppercase tracking-tighter animate-bounce">
+                        New
+                      </span>
+                    )}
+                    <span className={`absolute bottom-0 left-0 w-0 h-0.5 bg-blue-600 transition-all duration-300 group-hover/megamenu:w-full ${!showSolid && 'bg-white'}`}></span>
+                  </Link>
+                )}
 
                 {/* Megamenu Dropdown */}
                 {hasMegamenu && (
@@ -250,14 +290,41 @@ const Header: React.FC<HeaderProps> = ({ user, onOpenAuth, onLogout }) => {
           })}
         </nav>
 
-        {/* Desktop Auth / User */}
-        <div className="hidden md:flex items-center gap-5">
+        {/* Desktop Auth / User / Actions */}
+        <div className="hidden md:flex items-center gap-4">
+          {/* Live Support Badge */}
+          <div className={`hidden xl:flex items-center gap-2 px-3 py-1.5 rounded-xl border transition-all ${
+            showSolid 
+              ? 'bg-emerald-50 border-emerald-100 text-emerald-700' 
+              : 'bg-white/5 border-white/10 text-white/90'
+          }`}>
+            <div className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </div>
+            <span className="text-[11px] font-black tracking-wider uppercase">Live Support</span>
+          </div>
+
+          {/* Shopping Cart */}
+          <Link to="/cart" className={`p-2.5 rounded-xl transition-all relative group ${
+            showSolid ? 'text-blue-600 hover:bg-slate-100' : 'text-white/90 hover:bg-white/10'
+          }`}>
+            <svg className="w-6 h-6 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+            <span className="absolute top-1 right-1 w-4 h-4 bg-rose-500 text-white text-[9px] font-black flex items-center justify-center rounded-full border-2 border-white shadow-sm transition-transform group-hover:scale-125">
+              1
+            </span>
+          </Link>
+
+          <div className={`w-px h-8 mx-1 opacity-10 ${showSolid ? 'bg-slate-900' : 'bg-white'}`}></div>
+
           {user ? (
             <div className="relative">
               <button 
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
                 className={`flex items-center gap-3 py-2 px-2 pr-5 rounded-2xl transition-all border group ${
-                  isScrolled ? 'bg-slate-50 border-slate-200 hover:border-blue-200' : 'bg-white/10 border-white/20 text-white hover:bg-white/20'
+                  showSolid ? 'bg-slate-50 border-slate-200 hover:border-blue-200' : 'bg-white/10 border-white/20 text-white hover:bg-white/20'
                 }`}
               >
                 <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-black text-sm shadow-md group-hover:scale-110 transition-transform">
@@ -332,9 +399,9 @@ const Header: React.FC<HeaderProps> = ({ user, onOpenAuth, onLogout }) => {
         </div>
 
         {/* Mobile Menu Toggle */}
-        <button 
+          <button 
           className={`lg:hidden p-3 rounded-2xl transition-all active:scale-90 ${
-            isScrolled || mobileMenuOpen ? 'bg-slate-100 text-slate-900' : 'bg-white/10 text-white backdrop-blur-md'
+            showSolid ? 'bg-slate-100 text-slate-900' : 'bg-white/10 text-white backdrop-blur-md'
           }`}
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
         >
@@ -364,15 +431,34 @@ const Header: React.FC<HeaderProps> = ({ user, onOpenAuth, onLogout }) => {
         }`}>
           <div className="flex flex-col gap-2">
             {navLinks.map((link) => (
-              <a 
-                key={link.name} 
-                href={link.href} 
-                onClick={(e) => handleSmoothScroll(e, link.href)}
-                className="flex items-center justify-between p-5 text-slate-800 text-xl font-black hover:bg-slate-50 rounded-2xl transition-all active:translate-x-2"
-              >
-                {link.name}
-                <svg className="w-5 h-5 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7" /></svg>
-              </a>
+              link.href.startsWith('#') ? (
+                <a 
+                  key={link.name} 
+                  href={location.pathname === '/' ? link.href : `/${link.href}`}
+                  onClick={(e) => handleSmoothScroll(e, link.href)}
+                  className="flex items-center justify-between p-5 text-slate-800 text-xl font-black hover:bg-slate-50 rounded-2xl transition-all active:translate-x-2"
+                >
+                  {link.name}
+                  <svg className="w-5 h-5 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7-7" /></svg>
+                </a>
+              ) : (
+                <Link
+                  key={link.name}
+                  to={link.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center justify-between p-5 text-slate-800 text-xl font-black hover:bg-slate-50 rounded-2xl transition-all active:translate-x-2"
+                >
+                  <div className="flex items-center gap-3">
+                    {link.name}
+                    {link.isNew && (
+                      <span className="bg-rose-500 text-white text-[10px] font-black px-2 py-0.5 rounded-lg uppercase tracking-wider">
+                        New
+                      </span>
+                    )}
+                  </div>
+                  <svg className="w-5 h-5 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7-7" /></svg>
+                </Link>
+              )
             ))}
             
             <div className="mt-6 pt-6 border-t border-slate-100 flex flex-col gap-4">
