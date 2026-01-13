@@ -34,6 +34,13 @@ func main() {
 	}
 	defer database.Close()
 
+	// Connect to MySQL Admin
+	if err := database.ConnectMySQLAdmin(); err != nil {
+		log.Printf("⚠️ Failed to connect to MySQL Admin: %v", err)
+		// We don't fatal here because the server can still run with just Postgres
+	}
+	defer database.CloseMySQL()
+
 	// Initialize schema
 	if err := database.InitSchema(); err != nil {
 		log.Fatalf("❌ Failed to initialize database schema: %v", err)

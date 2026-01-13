@@ -29,6 +29,12 @@ type Config struct {
 	// Frontend
 	FrontendURL string
 
+	// MySQL Admin Config
+	MySQLHost          string
+	MySQLPort          string
+	MySQLAdminUser     string
+	MySQLAdminPassword string
+
 	// OAuth
 	GoogleClientID     string
 	GoogleClientSecret string
@@ -81,6 +87,12 @@ func Load() *Config {
 
 		// Frontend
 		FrontendURL: getEnv("FRONTEND_URL", "http://localhost:5173"),
+
+		// MySQL Admin Config
+		MySQLHost:          getEnv("MYSQL_HOST", "localhost"),
+		MySQLPort:          getEnv("MYSQL_PORT", "3306"),
+		MySQLAdminUser:     getEnv("MYSQL_ADMIN_USER", "root"),
+		MySQLAdminPassword: getEnv("MYSQL_ADMIN_PASSWORD", ""),
 
 		// OAuth
 		GoogleClientID:     getEnv("GOOGLE_CLIENT_ID", ""),

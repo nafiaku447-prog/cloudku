@@ -26,3 +26,21 @@ export interface FAQItem {
   question: string;
   answer: string;
 }
+
+export interface Database {
+    id: number;
+    database_name: string;
+    database_type: string;
+    database_user: string;
+    current_size_mb: number;
+    max_size_mb: number;
+    status: string;
+    created_at: string;
+}
+
+export interface DatabaseStatsType {
+    totalDatabases: number;
+    mysqlCount: number;
+    postgresCount: number;
+    totalSizeMB: number;
+}

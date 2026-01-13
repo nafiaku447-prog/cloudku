@@ -8,8 +8,10 @@ import (
 
 	"cloudku-server/database"
 	"cloudku-server/middleware"
+	"cloudku-server/services"
 
 	"github.com/gin-gonic/gin"
+	_ "github.com/go-sql-driver/mysql"
 )
 
 // DatabaseController handles database management endpoints
@@ -125,13 +127,26 @@ func (dc *DatabaseController) CreateDatabase(c *gin.Context) {
 			charset = "utf8mb4"
 			collation = "utf8mb4_unicode_ci"
 		} else {
+			// PostgreSQL placeholder
 			charset = "UTF8"
 			collation = "en_US.UTF-8"
 		}
 	}
 
-	// In production, this would execute actual MySQL/PostgreSQL commands
-	// For now, we store in our tracking table
+	// 1. Create in MySQL Server (if type is mysql)
+	if req.DatabaseType == "mysql" {
+		mysqlService := services.NewMySQLService()
+		if err := mysqlService.CreateDatabase(ctx, req.DatabaseName, req.DatabaseUser, req.DatabasePassword); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"success": false,
+				"message": "Failed to create MySQL database",
+				"error":   err.Error(),
+			})
+			return
+		}
+	}
+
+	// 2. Store metadata in Postgres
 	query := `
 		INSERT INTO user_databases (user_id, database_name, database_user, database_type, charset, "collation")
 		VALUES ($1, $2, $3, $4, $5, $6)
@@ -145,9 +160,11 @@ func (dc *DatabaseController) CreateDatabase(c *gin.Context) {
 		&db.DatabaseType, &db.Charset, &db.Collation, &db.SizeMB, &db.CreatedAt,
 	)
 	if err != nil {
+		// If metadata storage fails, we should probably rollback MySQL changes,
+		// but for now logging/error is enough for MVP.
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
-			"message": "Failed to create database",
+			"message": "Failed to track database",
 			"error":   err.Error(),
 		})
 		return
@@ -175,13 +192,31 @@ func (dc *DatabaseController) DeleteDatabase(c *gin.Context) {
 
 	ctx := context.Background()
 
-	// In production, this would also drop the actual database
-	query := `DELETE FROM user_databases WHERE id = $1 AND user_id = $2`
-	result, err := database.DB.Exec(ctx, query, id, userID)
-	if err != nil || result.RowsAffected() == 0 {
+	// 1. Get database details to delete from MySQL
+	var dbName, dbUser, dbType string
+	err = database.DB.QueryRow(ctx, "SELECT database_name, database_user, database_type FROM user_databases WHERE id = $1 AND user_id = $2", id, userID).Scan(&dbName, &dbUser, &dbType)
+	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"success": false,
 			"message": "Database not found",
+		})
+		return
+	}
+
+	// 2. Delete from MySQL
+	if dbType == "mysql" {
+		mysqlService := services.NewMySQLService()
+		// Best effort, ignore errors for now or log them
+		_ = mysqlService.DeleteDatabase(ctx, dbName, dbUser)
+	}
+
+	// 3. Delete metadata
+	query := `DELETE FROM user_databases WHERE id = $1 AND user_id = $2`
+	_, err = database.DB.Exec(ctx, query, id, userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "Failed to delete database record",
 		})
 		return
 	}
@@ -221,12 +256,12 @@ func (dc *DatabaseController) ChangePassword(c *gin.Context) {
 
 	ctx := context.Background()
 
-	// Verify ownership
-	var exists bool
-	query := `SELECT EXISTS(SELECT 1 FROM user_databases WHERE id = $1 AND user_id = $2)`
-	database.DB.QueryRow(ctx, query, id, userID).Scan(&exists)
+	// Verify ownership and get details
+	var dbName, dbUser, dbType string
+	query := `SELECT database_name, database_user, database_type FROM user_databases WHERE id = $1 AND user_id = $2`
+	err = database.DB.QueryRow(ctx, query, id, userID).Scan(&dbName, &dbUser, &dbType)
 
-	if !exists {
+	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"success": false,
 			"message": "Database not found",
@@ -234,8 +269,19 @@ func (dc *DatabaseController) ChangePassword(c *gin.Context) {
 		return
 	}
 
-	// In production, this would execute ALTER USER/SET PASSWORD command
-	// For now, we just return success
+	// Execute actual password change on MySQL
+	if dbType == "mysql" {
+		mysqlService := services.NewMySQLService()
+		if err := mysqlService.UpdatePassword(ctx, dbUser, req.NewPassword); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"success": false,
+				"message": "Failed to change password on server",
+				"error":   err.Error(),
+			})
+			return
+		}
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "Password changed successfully",

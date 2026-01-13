@@ -91,17 +91,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode, onS
   // Render Google button when modal opens and Google is loaded
   useEffect(() => {
     if (isOpen && googleLoaded && googleButtonRef.current) {
-      // Temporarily disabled to avoid 403 errors during origin propagation
-      // The custom button below will trigger Google Sign-In directly
-      // Uncomment after 24 hours when Google origin is fully propagated
-      
-      // renderGoogleButton(googleButtonRef.current, {
-      //   theme: 'outline',
-      //   size: 'large',
-      //   text: mode === 'register' ? 'signup_with' : 'signin_with',
-      //   shape: 'rectangular',
-      //   width: googleButtonRef.current.offsetWidth || 300,
-      // });
     }
   }, [isOpen, googleLoaded, mode]);
 
