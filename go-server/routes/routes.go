@@ -134,6 +134,7 @@ func SetupRoutes(r *gin.Engine) {
 			databases.DELETE("/:id", databaseController.DeleteDatabase)
 			databases.PUT("/:id/password", databaseController.ChangePassword)
 			databases.PUT("/:id/size", databaseController.UpdateSize)
+			databases.POST("/:id/query", databaseController.ExecuteQuery) // SQL Console
 		}
 
 		// ==========================================

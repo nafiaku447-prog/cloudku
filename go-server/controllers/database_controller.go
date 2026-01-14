@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -137,10 +138,11 @@ func (dc *DatabaseController) CreateDatabase(c *gin.Context) {
 	if req.DatabaseType == "mysql" {
 		mysqlService := services.NewMySQLService()
 		if err := mysqlService.CreateDatabase(ctx, req.DatabaseName, req.DatabaseUser, req.DatabasePassword); err != nil {
+			// SECURITY: Log internal error but don't expose details to client
+			log.Printf("ERROR: Failed to create MySQL database: %v", err)
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"success": false,
 				"message": "Failed to create MySQL database",
-				"error":   err.Error(),
 			})
 			return
 		}
@@ -290,6 +292,9 @@ func (dc *DatabaseController) ChangePassword(c *gin.Context) {
 
 // UpdateSize updates database size
 func (dc *DatabaseController) UpdateSize(c *gin.Context) {
+	// SECURITY: Add authorization check - was missing user validation
+	userID := middleware.GetUserID(c)
+
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
@@ -302,12 +307,24 @@ func (dc *DatabaseController) UpdateSize(c *gin.Context) {
 
 	ctx := context.Background()
 
+	// SECURITY: Verify ownership before allowing update
+	var exists bool
+	verifyQuery := `SELECT EXISTS(SELECT 1 FROM user_databases WHERE id = $1 AND user_id = $2)`
+	database.DB.QueryRow(ctx, verifyQuery, id, userID).Scan(&exists)
+	if !exists {
+		c.JSON(http.StatusNotFound, gin.H{
+			"success": false,
+			"message": "Database not found",
+		})
+		return
+	}
+
 	// In production, this would query actual database size
 	// For now, we return a simulated size
 	sizeMB := 10.5 // Simulated size
 
-	query := `UPDATE user_databases SET size_mb = $1 WHERE id = $2`
-	database.DB.Exec(ctx, query, sizeMB, id)
+	query := `UPDATE user_databases SET size_mb = $1 WHERE id = $2 AND user_id = $3`
+	database.DB.Exec(ctx, query, sizeMB, id, userID)
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
@@ -343,5 +360,76 @@ func (dc *DatabaseController) GetStats(c *gin.Context) {
 			"postgresCount":  postgresCount,
 			"totalSizeMB":    totalSize,
 		},
+	})
+}
+
+// ExecuteQueryRequest represents SQL query execution request
+type ExecuteQueryRequest struct {
+	Query    string `json:"query" binding:"required"`
+	Password string `json:"password" binding:"required"`
+}
+
+// ExecuteQuery executes a SQL query on user's database
+func (dc *DatabaseController) ExecuteQuery(c *gin.Context) {
+	userID := middleware.GetUserID(c)
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "Invalid database ID",
+		})
+		return
+	}
+
+	var req ExecuteQueryRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "Query and password are required",
+		})
+		return
+	}
+
+	ctx := context.Background()
+
+	// SECURITY: Verify ownership and get database details
+	var dbName, dbUser, dbType string
+	verifyQuery := `SELECT database_name, database_user, database_type FROM user_databases WHERE id = $1 AND user_id = $2`
+	err = database.DB.QueryRow(ctx, verifyQuery, id, userID).Scan(&dbName, &dbUser, &dbType)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"success": false,
+			"message": "Database not found",
+		})
+		return
+	}
+
+	// Only MySQL supported for now
+	if dbType != "mysql" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "Only MySQL databases support SQL console currently",
+		})
+		return
+	}
+
+	// Execute query
+	mysqlService := services.NewMySQLService()
+	result, err := mysqlService.ExecuteQuery(ctx, dbName, dbUser, req.Password, req.Query)
+	if err != nil {
+		log.Printf("WARN: SQL query failed for db %s: %v", dbName, err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"columns": result.Columns,
+		"rows":    result.Rows,
+		"message": result.Message,
 	})
 }

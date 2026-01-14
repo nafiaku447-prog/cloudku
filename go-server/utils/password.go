@@ -3,8 +3,10 @@ package utils
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"math/big"
+	"unicode"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -30,6 +32,34 @@ func GenerateRandomString(length int) (string, error) {
 		return "", err
 	}
 	return hex.EncodeToString(bytes), nil
+}
+
+// SECURITY: ValidatePasswordStrength validates password complexity for user accounts
+// Enforces OWASP password guidelines for production security
+func ValidatePasswordStrength(password string) error {
+	if len(password) < 8 {
+		return errors.New("password must be at least 8 characters")
+	}
+	if len(password) > 128 {
+		return errors.New("password must not exceed 128 characters")
+	}
+
+	var hasUpper, hasLower, hasDigit bool
+	for _, c := range password {
+		switch {
+		case unicode.IsUpper(c):
+			hasUpper = true
+		case unicode.IsLower(c):
+			hasLower = true
+		case unicode.IsDigit(c):
+			hasDigit = true
+		}
+	}
+
+	if !hasUpper || !hasLower || !hasDigit {
+		return errors.New("password must contain uppercase, lowercase, and numbers")
+	}
+	return nil
 }
 
 // HashPassword hashes a password using bcrypt

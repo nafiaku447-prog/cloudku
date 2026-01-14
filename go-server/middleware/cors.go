@@ -17,6 +17,12 @@ func CORSMiddleware() gin.HandlerFunc {
 		c.Header("Access-Control-Allow-Methods", "POST, HEAD, PATCH, OPTIONS, GET, PUT, DELETE")
 		c.Header("Cross-Origin-Opener-Policy", "same-origin-allow-popups")
 
+		// SECURITY: Add headers to prevent common attacks (OWASP best practices)
+		c.Header("X-Content-Type-Options", "nosniff") // Prevent MIME sniffing
+		c.Header("X-Frame-Options", "DENY")           // Prevent clickjacking
+		c.Header("X-XSS-Protection", "1; mode=block") // Enable browser XSS filter
+		c.Header("Referrer-Policy", "strict-origin-when-cross-origin")
+
 		if c.Request.Method == "OPTIONS" {
 			c.AbortWithStatus(204)
 			return

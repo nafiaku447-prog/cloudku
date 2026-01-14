@@ -3,6 +3,9 @@ package models
 import (
 	"context"
 	"database/sql"
+	"fmt"
+	"log"
+	"strconv"
 	"time"
 
 	"cloudku-server/database"
@@ -101,6 +104,8 @@ func GetDomainsByUserID(ctx context.Context, userID int) ([]Domain, error) {
 			&d.VerifiedAt, &d.CreatedAt, &d.UpdatedAt,
 		)
 		if err != nil {
+			// SECURITY: Log scan errors for debugging, don't silently ignore
+			log.Printf("WARN: Failed to scan domain row: %v", err)
 			continue
 		}
 
@@ -158,9 +163,33 @@ func CreateDomain(ctx context.Context, userID int, domainName, documentRoot stri
 	return &d, nil
 }
 
-// UpdateDomain updates a domain
+// SECURITY: Whitelist of allowed update columns to prevent SQL injection (OWASP A03:2021)
+// Only these columns can be updated via the API - prevents attacker from injecting arbitrary SQL
+var allowedDomainUpdateColumns = map[string]bool{
+	"document_root":  true,
+	"status":         true,
+	"ssl_enabled":    true,
+	"ssl_provider":   true,
+	"ssl_expires_at": true,
+	"auto_renew_ssl": true,
+	"verified_at":    true,
+}
+
+// UpdateDomain updates a domain with validated columns only
 func UpdateDomain(ctx context.Context, id, userID int, updates map[string]interface{}) (*Domain, error) {
-	// Build dynamic update query
+	// SECURITY: Validate all keys are in allowlist before building query
+	for key := range updates {
+		if !allowedDomainUpdateColumns[key] {
+			return nil, fmt.Errorf("invalid update column: %s", key)
+		}
+	}
+
+	if len(updates) == 0 {
+		return nil, fmt.Errorf("no valid updates provided")
+	}
+
+	// Build dynamic update query with validated columns
+	// SECURITY: Using strconv.Itoa for proper parameter numbering (was using unsafe rune conversion)
 	setClauses := ""
 	args := []interface{}{}
 	argCount := 1
@@ -169,15 +198,18 @@ func UpdateDomain(ctx context.Context, id, userID int, updates map[string]interf
 		if setClauses != "" {
 			setClauses += ", "
 		}
-		setClauses += key + " = $" + string(rune('0'+argCount))
+		setClauses += key + " = $" + strconv.Itoa(argCount)
 		args = append(args, value)
 		argCount++
 	}
 
+	// Add updated_at timestamp
+	setClauses += ", updated_at = NOW()"
+
 	args = append(args, id, userID)
 	query := `
 		UPDATE domains SET ` + setClauses + `
-		WHERE id = $` + string(rune('0'+argCount)) + ` AND user_id = $` + string(rune('0'+argCount+1)) + `
+		WHERE id = $` + strconv.Itoa(argCount) + ` AND user_id = $` + strconv.Itoa(argCount+1) + `
 		RETURNING id, user_id, domain_name, document_root, status, ssl_enabled,
 		          ssl_provider, ssl_expires_at, auto_renew_ssl, verified_at, created_at, updated_at
 	`
@@ -189,7 +221,7 @@ func UpdateDomain(ctx context.Context, id, userID int, updates map[string]interf
 		&d.VerifiedAt, &d.CreatedAt, &d.UpdatedAt,
 	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to update domain: %w", err)
 	}
 
 	return &d, nil

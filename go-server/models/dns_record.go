@@ -3,6 +3,7 @@ package models
 import (
 	"context"
 	"database/sql"
+	"log"
 	"time"
 
 	"cloudku-server/database"
@@ -76,6 +77,8 @@ func GetDNSRecordsByDomainID(ctx context.Context, domainID int) ([]DNSRecord, er
 			&r.TTL, &r.Priority, &r.CreatedAt, &r.UpdatedAt,
 		)
 		if err != nil {
+			// SECURITY: Log scan errors for debugging, don't silently ignore
+			log.Printf("WARN: Failed to scan DNS record row: %v", err)
 			continue
 		}
 		records = append(records, r)

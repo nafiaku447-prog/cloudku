@@ -57,12 +57,15 @@ func main() {
 	// Setup routes
 	routes.SetupRoutes(r)
 
-	// Create HTTP server
+	// Create HTTP server with security hardening
 	srv := &http.Server{
-		Addr:         ":" + cfg.Port,
-		Handler:      r,
-		ReadTimeout:  30 * time.Second,
-		WriteTimeout: 30 * time.Second,
+		Addr:              ":" + cfg.Port,
+		Handler:           r,
+		ReadTimeout:       30 * time.Second,
+		WriteTimeout:      30 * time.Second,
+		IdleTimeout:       120 * time.Second, // SECURITY: Close idle connections
+		ReadHeaderTimeout: 10 * time.Second,  // SECURITY: Prevent Slowloris attacks
+		MaxHeaderBytes:    1 << 20,           // SECURITY: 1MB max header size
 	}
 
 	// Start server in goroutine

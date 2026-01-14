@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import { Database } from '../../types';
 import { Dialog, DialogContent } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { Play, Eraser, Loader2, CheckCircle2, Terminal, X } from "lucide-react"
+import { Play, Eraser, Loader2, CheckCircle2, Terminal, X, Lock } from "lucide-react"
+import { getToken } from '../../utils/authApi';
 
 interface DatabaseTerminalModalProps {
     isOpen: boolean;
@@ -15,42 +16,60 @@ const DatabaseTerminalModal: React.FC<DatabaseTerminalModalProps> = ({
     onClose,
     database
 }) => {
-    const [query, setQuery] = useState('SELECT * FROM users LIMIT 10;');
+    const [query, setQuery] = useState('SHOW TABLES;');
+    const [password, setPassword] = useState('');
     const [isRunning, setIsRunning] = useState(false);
     const [result, setResult] = useState<any>(null);
     const [error, setError] = useState<string | null>(null);
+    const [queryTime, setQueryTime] = useState<number>(0);
 
     if (!database) return null;
 
-    const handleRun = () => {
+    const handleRun = async () => {
+        if (!password) {
+            setError('Please enter your database password');
+            return;
+        }
+        if (!query.trim()) {
+            setError('Please enter a SQL query');
+            return;
+        }
+
         setIsRunning(true);
         setResult(null);
         setError(null);
 
-        setTimeout(() => {
-            setIsRunning(false);
-            const lowerQuery = query.toLowerCase();
-            
-            if (lowerQuery.includes('select')) {
+        const startTime = Date.now();
+
+        try {
+            const token = getToken();
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/databases/${database.id}/query`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ query, password })
+            });
+
+            const data = await response.json();
+            const elapsed = Date.now() - startTime;
+            setQueryTime(elapsed);
+
+            if (data.success) {
                 setResult({
-                    headers: ['id', 'username', 'email', 'role', 'status', 'created_at'],
-                    rows: [
-                        [1, 'admin', 'admin@cloudku.com', 'Administrator', 'Active', '2024-01-01'],
-                        [2, 'user_john', 'john@example.com', 'User', 'Active', '2024-01-15'],
-                        [3, 'dev_team', 'dev@cloudku.com', 'Developer', 'Suspended', '2024-02-10'],
-                        [4, 'test_acc', 'test@test.com', 'Viewer', 'Active', '2024-03-05'],
-                        [5, 'guest_01', 'guest@temp.com', 'Guest', 'Inactive', '2024-03-10'],
-                    ]
-                });
-            } else if (lowerQuery.includes('show tables')) {
-                setResult({
-                    headers: [`Tables_in_${database.database_name}`],
-                    rows: [['users'], ['orders'], ['products'], ['settings'], ['logs']]
+                    headers: data.columns || [],
+                    rows: data.rows || [],
+                    message: data.message
                 });
             } else {
-                setError(`Error: You have an error in your SQL syntax; check the manual for correct syntax.`);
+                setError(data.message || 'Query failed');
             }
-        }, 800);
+        } catch (err) {
+            setError('Failed to connect to server');
+        } finally {
+            setIsRunning(false);
+        }
     };
 
     return (
@@ -70,11 +89,22 @@ const DatabaseTerminalModal: React.FC<DatabaseTerminalModalProps> = ({
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
+                        {/* Password Input */}
+                        <div className="flex items-center gap-2 bg-[#252525] rounded-lg px-3 py-1.5 border border-[#333]">
+                            <Lock className="w-3.5 h-3.5 text-gray-500" />
+                            <input 
+                                type="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                placeholder="DB Password"
+                                className="bg-transparent text-sm text-white w-24 outline-none placeholder:text-gray-600"
+                            />
+                        </div>
                         <Button 
                             variant="ghost" 
                             size="sm" 
                             className="h-8 text-xs font-medium text-gray-400 hover:text-white hover:bg-[#333]"
-                            onClick={() => setQuery('')}
+                            onClick={() => { setQuery(''); setResult(null); setError(null); }}
                         >
                             <Eraser className="w-3.5 h-3.5 mr-2" />
                             Clear
@@ -130,7 +160,7 @@ const DatabaseTerminalModal: React.FC<DatabaseTerminalModalProps> = ({
                             {result && (
                                 <span className="text-xs text-[#3ECF8E] flex items-center gap-1">
                                     <CheckCircle2 className="w-3 h-3" /> 
-                                    Query successful ({Math.random().toFixed(3)}ms)
+                                    {result.message} ({queryTime}ms)
                                 </span>
                             )}
                         </div>
@@ -139,7 +169,7 @@ const DatabaseTerminalModal: React.FC<DatabaseTerminalModalProps> = ({
                             {!result && !error && (
                                 <div className="h-full flex flex-col items-center justify-center text-gray-600">
                                     <Terminal className="w-12 h-12 mb-3 opacity-20" />
-                                    <p className="text-sm">Run a query to see results</p>
+                                    <p className="text-sm">Enter your password and run a query</p>
                                 </div>
                             )}
 
@@ -149,7 +179,7 @@ const DatabaseTerminalModal: React.FC<DatabaseTerminalModalProps> = ({
                                 </div>
                             )}
 
-                            {result && (
+                            {result && result.rows && result.rows.length > 0 && (
                                 <table className="w-full text-left border-collapse font-mono text-xs">
                                     <thead>
                                         <tr>
@@ -165,13 +195,19 @@ const DatabaseTerminalModal: React.FC<DatabaseTerminalModalProps> = ({
                                             <tr key={i} className="hover:bg-[#202020] group">
                                                 {row.map((cell: any, j: number) => (
                                                     <td key={j} className="border-b border-r border-[#2E2E2E] px-4 py-2 text-[#D1D1D1] whitespace-nowrap">
-                                                        {cell}
+                                                        {cell === null ? <span className="text-gray-600">NULL</span> : String(cell)}
                                                     </td>
                                                 ))}
                                             </tr>
                                         ))}
                                     </tbody>
                                 </table>
+                            )}
+
+                            {result && result.rows && result.rows.length === 0 && (
+                                <div className="p-6 text-gray-500 text-sm">
+                                    Query executed successfully. No rows returned.
+                                </div>
                             )}
                         </div>
                     </div>
@@ -180,7 +216,7 @@ const DatabaseTerminalModal: React.FC<DatabaseTerminalModalProps> = ({
                 {/* Status Bar */}
                 <div className="h-8 bg-[#3ECF8E] text-[#151515] flex items-center justify-between px-4 text-[10px] font-bold uppercase tracking-wider">
                      <span>{database.database_type === 'mysql' ? 'MySQL 8.0' : 'PostgreSQL 15'}</span>
-                     <span>Ready</span>
+                     <span>{password ? 'Ready' : 'Enter password to execute'}</span>
                 </div>
             </DialogContent>
         </Dialog>

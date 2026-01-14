@@ -1,8 +1,6 @@
 package middleware
 
 import (
-	"context"
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -39,18 +37,22 @@ func AuthMiddleware() gin.HandlerFunc {
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{
 				"success": false,
-				"message": "Invalid or expired token: " + err.Error(),
+				// SECURITY: Don't expose detailed error info (was exposing err.Error())
+				"message": "Invalid or expired token",
 			})
 			c.Abort()
 			return
 		}
 
-		// Verify user exists in database
-		user, err := models.FindUserByID(context.Background(), claims.UserID)
+		// SECURITY: Use request context for proper timeout/cancellation propagation
+		// Was using context.Background() which ignores request timeouts
+		user, err := models.FindUserByID(c.Request.Context(), claims.UserID)
 		if err != nil {
+			// SECURITY: Generic error message to prevent user enumeration attacks
+			// Was: fmt.Sprintf("User not found (ID: %d): %v", claims.UserID, err)
 			c.JSON(http.StatusUnauthorized, gin.H{
 				"success": false,
-				"message": fmt.Sprintf("User not found (ID: %d): %v", claims.UserID, err),
+				"message": "Invalid token",
 			})
 			c.Abort()
 			return

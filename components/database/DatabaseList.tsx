@@ -146,6 +146,19 @@ const DatabaseList: React.FC<DatabaseListProps> = ({
                                 <Trash2 className="w-4.5 h-4.5" />
                             </Button>
                             <div className="w-px h-6 bg-gray-200 mx-2"></div>
+                            {/* phpMyAdmin Button - Opens in new tab */}
+                            <Button 
+                                onClick={() => {
+                                    // Open phpMyAdmin with database pre-selected
+                                    const pmaUrl = `http://localhost/phpmyadmin/index.php?route=/database/structure&db=${encodeURIComponent(db.database_name)}`;
+                                    window.open(pmaUrl, '_blank');
+                                }}
+                                variant="outline"
+                                className="bg-white border-orange-200 text-orange-600 hover:bg-orange-50 hover:border-orange-300 font-bold h-9 px-4 rounded-lg flex items-center gap-2"
+                            >
+                                <ExternalLink className="w-4 h-4" />
+                                phpMyAdmin
+                            </Button>
                             <Button 
                                 onClick={() => onTerminalClick(db)}
                                 className="bg-gray-900 text-white hover:bg-black font-bold h-9 px-4 rounded-lg shadow-lg shadow-gray-200 flex items-center gap-2"
