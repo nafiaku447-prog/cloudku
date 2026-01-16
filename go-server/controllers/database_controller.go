@@ -283,3 +283,38 @@ func (dc *DatabaseController) ExecuteQuery(c *gin.Context) {
 		"message": result.Message,
 	})
 }
+
+// GetSchema returns the database schema
+func (dc *DatabaseController) GetSchema(c *gin.Context) {
+	userID := middleware.GetUserID(c)
+
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "Invalid database ID",
+		})
+		return
+	}
+
+	// Password might be passed via query param or header (optional)
+	// Ideally should be in body but for GET request query param is standard for simple auth
+	password := c.Query("password")
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
+	defer cancel()
+
+	schema := dc.service.GetDatabaseSchema(ctx, userID, id, password)
+	if schema == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "Failed to fetch schema",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"schema":  schema,
+	})
+}

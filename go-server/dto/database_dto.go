@@ -101,3 +101,21 @@ var (
 	ErrCreateFailed     = errors.New("failed to create database")
 	ErrDeleteFailed     = errors.New("failed to delete database")
 )
+
+// ============================================================================
+// SCHEMA DTOs
+// ============================================================================
+
+type ColumnSchema struct {
+	Name string `json:"name"`
+	Type string `json:"type"`
+}
+
+type TableSchema struct {
+	Name    string         `json:"name"`
+	Columns []ColumnSchema `json:"columns"`
+}
+
+type DatabaseSchema struct {
+	Tables []TableSchema `json:"tables"`
+}

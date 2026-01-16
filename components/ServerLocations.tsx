@@ -42,7 +42,8 @@ const ServerLocations: React.FC = () => {
               <img 
                 src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=1000" 
                 alt="Global Network Map" 
-                className="rounded-[2.5rem] opacity-60 group-hover:scale-110 transition-transform duration-[10s]"
+                className="rounded-[2.5rem] opacity-60 group-hover:scale-110 transition-transform"
+                style={{ transitionDuration: '10s' }}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent"></div>
               

@@ -400,3 +400,36 @@ func ValidateQuery(query string, allowedDB string) (string, error) {
 
 	return query, nil
 }
+
+// GetDatabaseSchema retrieves the schema for a specific database
+func (s *DatabaseService) GetDatabaseSchema(ctx context.Context, userID, id int, password string) *dto.DatabaseSchema {
+	// Get database credentials AND stored password
+	dbName, dbUser, dbType, storedPass, err := s.repo.GetDBCredentials(ctx, id, userID)
+	if err != nil {
+		return nil
+	}
+
+	// Use stored password if provided password is empty
+	finalPassword := password
+	if finalPassword == "" {
+		finalPassword = storedPass
+	}
+
+	if finalPassword == "" {
+		return nil
+	}
+
+	// Only MySQL supported
+	if dbType != "mysql" {
+		return nil
+	}
+
+	// Fetch schema
+	schema, err := s.mysqlService.GetSchema(ctx, dbName, dbUser, finalPassword)
+	if err != nil {
+		log.Printf("WARN: Failed to get schema for db %s: %v", dbName, err)
+		return nil
+	}
+
+	return schema
+}

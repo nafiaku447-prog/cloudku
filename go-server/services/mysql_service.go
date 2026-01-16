@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"cloudku-server/database"
+	"cloudku-server/dto"
 )
 
 // MySQLService handles MySQL specific operations
@@ -26,9 +27,10 @@ func NewMySQLService() *MySQLService {
 }
 
 // ValidateIdentifier checks if name is safe (alphanumeric + underscores only)
+var identifierRegex = regexp.MustCompile("^[a-zA-Z0-9_]+$")
+
 func (s *MySQLService) ValidateIdentifier(name string) bool {
-	match, _ := regexp.MatchString("^[a-zA-Z0-9_]+$", name)
-	return match
+	return identifierRegex.MatchString(name)
 }
 
 // CreateDatabase creates a new database and user with privileges
@@ -187,14 +189,9 @@ var forbiddenCommands = []string{
 func (s *MySQLService) GetPooledConnection(ctx context.Context, dbName, dbUser, dbPassword string) (*sql.DB, error) {
 	// 1. Check if connection exists in pool
 	if val, ok := s.userPool.Load(dbUser); ok {
-		conn := val.(*sql.DB)
-		// Ping to ensure it's alive
-		if err := conn.PingContext(ctx); err == nil {
-			return conn, nil
-		}
-		// If ping fails, close and remove from pool
-		conn.Close()
-		s.userPool.Delete(dbUser)
+		// OPTIMIZATION: Skip Ping to save network round-trip.
+		// sql.DB handles connection polling internally.
+		return val.(*sql.DB), nil
 	}
 
 	// 2. Create new connection
@@ -271,7 +268,8 @@ func (s *MySQLService) ExecuteQuery(ctx context.Context, dbName, dbUser, dbPassw
 		}
 
 		// Fetch all rows
-		var resultRows [][]interface{}
+		// OPTIMIZATION: Pre-allocate slice
+		resultRows := make([][]interface{}, 0, 50)
 		for rows.Next() {
 			// Create slice for row values
 			values := make([]interface{}, len(columns))
@@ -315,4 +313,64 @@ func (s *MySQLService) ExecuteQuery(ctx context.Context, dbName, dbUser, dbPassw
 			Message: fmt.Sprintf("%d rows affected", affected),
 		}, nil
 	}
+}
+
+// GetSchema retrieves the database schema (tables and columns)
+func (s *MySQLService) GetSchema(ctx context.Context, dbName, dbUser, dbPassword string) (*dto.DatabaseSchema, error) {
+	// Use Pooled Connection!
+	userDB, err := s.GetPooledConnection(ctx, dbName, dbUser, dbPassword)
+	if err != nil {
+		return nil, err
+	}
+	// Note: We don't close pooled connection here
+
+	// Get Tables
+	rows, err := userDB.QueryContext(ctx, "SHOW TABLES")
+	if err != nil {
+		return nil, fmt.Errorf("failed to get tables: %w", err)
+	}
+	defer rows.Close()
+
+	var tables []dto.TableSchema
+	var tableNames []string
+
+	for rows.Next() {
+		var tableName string
+		if err := rows.Scan(&tableName); err != nil {
+			continue
+		}
+		tableNames = append(tableNames, tableName)
+	}
+	rows.Close() // Close early to reuse connection for column queries
+
+	// Get Columns for each table
+	for _, tableName := range tableNames {
+		// Use simple DESCRIBE query as it's standard MySQL
+		// Querying information_schema is better for bulk, but this is simpler for per-user DBs
+		colsRows, err := userDB.QueryContext(ctx, fmt.Sprintf("DESCRIBE `%s`", tableName))
+		if err != nil {
+			continue // Skip table if error
+		}
+
+		var columns []dto.ColumnSchema
+		for colsRows.Next() {
+			var field, typ, null, key, def, extra sql.NullString
+			// mysql 5.7/8.0 DESCRIBE returns 6 columns: Field, Type, Null, Key, Default, Extra
+			if err := colsRows.Scan(&field, &typ, &null, &key, &def, &extra); err != nil {
+				continue
+			}
+			columns = append(columns, dto.ColumnSchema{
+				Name: field.String,
+				Type: typ.String,
+			})
+		}
+		colsRows.Close()
+
+		tables = append(tables, dto.TableSchema{
+			Name:    tableName,
+			Columns: columns,
+		})
+	}
+
+	return &dto.DatabaseSchema{Tables: tables}, nil
 }

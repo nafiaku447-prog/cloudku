@@ -18,3 +18,4 @@ yarn-error.log*
 *.sw?
 deploy.sh
 deploy.sh
+cloudku-server.exe
