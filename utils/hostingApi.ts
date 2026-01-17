@@ -3,7 +3,7 @@
  * Frontend utility untuk fetch data dari backend hosting API
  */
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+import { API_V1_URL } from './api';
 
 /**
  * Get auth token from localStorage
@@ -25,9 +25,13 @@ const getAuthHeaders = (): HeadersInit => {
 
 /**
  * Generic fetch wrapper dengan error handling
+ * Endpoint should be without /api/v1 prefix (e.g., '/websites', '/domains')
  */
 async function apiFetch<T>(endpoint: string, options?: RequestInit): Promise<T> {
-    const response = await fetch(`${API_URL}${endpoint}`, {
+    // Ensure endpoint starts with /
+    const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    
+    const response = await fetch(`${API_V1_URL}${normalizedEndpoint}`, {
         ...options,
         headers: {
             ...getAuthHeaders(),
@@ -51,18 +55,18 @@ async function apiFetch<T>(endpoint: string, options?: RequestInit): Promise<T> 
 // ==================== WEBSITES ====================
 
 export const getWebsites = async () => {
-    return apiFetch<{ success: boolean; data: any[] }>('/api/websites');
+    return apiFetch<{ success: boolean; data: any[] }>('/websites');
 };
 
 export const createWebsite = async (domain: string, plan: string) => {
-    return apiFetch<{ success: boolean; data: any; message: string }>('/api/websites', {
+    return apiFetch<{ success: boolean; data: any; message: string }>('/websites', {
         method: 'POST',
         body: JSON.stringify({ domain, plan }),
     });
 };
 
 export const deleteWebsite = async (id: number) => {
-    return apiFetch<{ success: boolean; message: string }>(`/api/websites/${id}`, {
+    return apiFetch<{ success: boolean; message: string }>(`/websites/${id}`, {
         method: 'DELETE',
     });
 };
@@ -70,7 +74,7 @@ export const deleteWebsite = async (id: number) => {
 // ==================== DOMAINS ====================
 
 export const getDomains = async () => {
-    const response = await apiFetch<{ success: boolean; domains: any[] }>('/api/domains');
+    const response = await apiFetch<{ success: boolean; domains: any[] }>('/domains');
     return {
         success: response.success,
         data: response.domains || []
@@ -78,14 +82,14 @@ export const getDomains = async () => {
 };
 
 export const registerDomain = async (domainName: string) => {
-    return apiFetch<{ success: boolean; data: any; message: string }>('/api/domains', {
+    return apiFetch<{ success: boolean; data: any; message: string }>('/domains', {
         method: 'POST',
         body: JSON.stringify({ domainName }),
     });
 };
 
 export const toggleAutoRenew = async (id: number, autoRenew: boolean) => {
-    return apiFetch<{ success: boolean; message: string }>(`/api/domains/${id}/auto-renew`, {
+    return apiFetch<{ success: boolean; message: string }>(`/domains/${id}/auto-renew`, {
         method: 'PATCH',
         body: JSON.stringify({ autoRenew }),
     });
@@ -94,11 +98,11 @@ export const toggleAutoRenew = async (id: number, autoRenew: boolean) => {
 // ==================== EMAIL ACCOUNTS ====================
 
 export const getEmails = async () => {
-    return apiFetch<{ success: boolean; data: any[] }>('/api/emails');
+    return apiFetch<{ success: boolean; data: any[] }>('/emails');
 };
 
 export const createEmail = async (email: string, quotaMb?: number) => {
-    return apiFetch<{ success: boolean; data: any; message: string }>('/api/emails', {
+    return apiFetch<{ success: boolean; data: any; message: string }>('/emails', {
         method: 'POST',
         body: JSON.stringify({ email, quotaMb }),
     });
@@ -107,7 +111,7 @@ export const createEmail = async (email: string, quotaMb?: number) => {
 // ==================== DATABASES ====================
 
 export const getDatabases = async () => {
-    const response = await apiFetch<{ success: boolean; databases: any[]; stats: any }>('/api/databases');
+    const response = await apiFetch<{ success: boolean; databases: any[]; stats: any }>('/databases');
     // Transform to match expected format
     return {
         success: response.success,
@@ -116,7 +120,7 @@ export const getDatabases = async () => {
 };
 
 export const createDatabase = async (databaseName: string, databaseType: string) => {
-    return apiFetch<{ success: boolean; data: any; message: string }>('/api/databases', {
+    return apiFetch<{ success: boolean; data: any; message: string }>('/databases', {
         method: 'POST',
         body: JSON.stringify({ databaseName, databaseType }),
     });
@@ -125,23 +129,23 @@ export const createDatabase = async (databaseName: string, databaseType: string)
 // ==================== SSL CERTIFICATES ====================
 
 export const getSSLCertificates = async () => {
-    return apiFetch<{ success: boolean; data: any[] }>('/api/ssl');
+    return apiFetch<{ success: boolean; data: any[] }>('/ssl');
 };
 
 // ==================== INVOICES ====================
 
 export const getInvoices = async () => {
-    return apiFetch<{ success: boolean; data: any[] }>('/api/invoices');
+    return apiFetch<{ success: boolean; data: any[] }>('/invoices');
 };
 
 // ==================== SUPPORT TICKETS ====================
 
 export const getTickets = async () => {
-    return apiFetch<{ success: boolean; data: any[] }>('/api/tickets');
+    return apiFetch<{ success: boolean; data: any[] }>('/tickets');
 };
 
 export const createTicket = async (subject: string, message: string, priority: string) => {
-    return apiFetch<{ success: boolean; data: any; message: string }>('/api/tickets', {
+    return apiFetch<{ success: boolean; data: any; message: string }>('/tickets', {
         method: 'POST',
         body: JSON.stringify({ subject, message, priority }),
     });
@@ -150,7 +154,7 @@ export const createTicket = async (subject: string, message: string, priority: s
 // ==================== PAYMENT METHODS ====================
 
 export const getPaymentMethods = async () => {
-    return apiFetch<{ success: boolean; data: any[] }>('/api/payment-methods');
+    return apiFetch<{ success: boolean; data: any[] }>('/payment-methods');
 };
 
 // ==================== DASHBOARD STATS ====================

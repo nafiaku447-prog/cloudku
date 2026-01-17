@@ -1,6 +1,5 @@
 import { getToken } from './authApi';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+import { getApiUrl } from './api';
 
 interface FileItem {
     id: number;
@@ -30,7 +29,7 @@ interface ListFilesResponse {
 export const listFiles = async (path: string = '/public_html'): Promise<ListFilesResponse> => {
     const token = getToken();
 
-    const response = await fetch(`${API_URL}/api/files/list?path=${encodeURIComponent(path)}`, {
+    const response = await fetch(getApiUrl(`/files/list?path=${encodeURIComponent(path)}`), {
         method: 'GET',
         headers: {
             'Authorization': `Bearer ${token}`,
@@ -66,7 +65,7 @@ export const uploadFile = async (file: File, path: string = '/public_html'): Pro
     formData.append('path', path);
 
     try {
-        const response = await fetch(`${API_URL}/api/files/upload`, {
+        const response = await fetch(getApiUrl('/files/upload'), {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -101,7 +100,7 @@ export const uploadFile = async (file: File, path: string = '/public_html'): Pro
 export const downloadFile = async (filePath: string): Promise<Blob> => {
     const token = getToken();
 
-    const response = await fetch(`${API_URL}/api/files/download?path=${encodeURIComponent(filePath)}`, {
+    const response = await fetch(getApiUrl(`/files/download?path=${encodeURIComponent(filePath)}`), {
         method: 'GET',
         headers: {
             'Authorization': `Bearer ${token}`,
@@ -121,7 +120,7 @@ export const downloadFile = async (filePath: string): Promise<Blob> => {
 export const deleteFile = async (filePath: string): Promise<void> => {
     const token = getToken();
 
-    const response = await fetch(`${API_URL}/api/files/delete`, {
+    const response = await fetch(getApiUrl('/files/delete'), {
         method: 'DELETE',
         headers: {
             'Authorization': `Bearer ${token}`,
@@ -144,7 +143,7 @@ export const deleteFile = async (filePath: string): Promise<void> => {
 export const createFolder = async (folderName: string, path: string = '/public_html'): Promise<void> => {
     const token = getToken();
 
-    const response = await fetch(`${API_URL}/api/files/folder`, {
+    const response = await fetch(getApiUrl('/files/folder'), {
         method: 'POST',
         headers: {
             'Authorization': `Bearer ${token}`,
@@ -167,7 +166,7 @@ export const createFolder = async (folderName: string, path: string = '/public_h
 export const readFileContent = async (filePath: string): Promise<string> => {
     const token = getToken();
 
-    const response = await fetch(`${API_URL}/api/files/read?path=${encodeURIComponent(filePath)}`, {
+    const response = await fetch(getApiUrl(`/files/read?path=${encodeURIComponent(filePath)}`), {
         method: 'GET',
         headers: {
             'Authorization': `Bearer ${token}`,
@@ -188,7 +187,7 @@ export const readFileContent = async (filePath: string): Promise<string> => {
 export const updateFileContent = async (filePath: string, content: string): Promise<void> => {
     const token = getToken();
 
-    const response = await fetch(`${API_URL}/api/files/update`, {
+    const response = await fetch(getApiUrl('/files/update'), {
         method: 'PUT',
         headers: {
             'Authorization': `Bearer ${token}`,
@@ -215,7 +214,7 @@ export const extractZipFile = async (zipPath: string, deleteAfter: boolean = tru
         throw new Error('Not authenticated. Please login first.');
     }
 
-    const response = await fetch(`${API_URL}/api/files/extract`, {
+    const response = await fetch(getApiUrl('/files/extract'), {
         method: 'POST',
         headers: {
             'Authorization': `Bearer ${token}`,
@@ -242,7 +241,7 @@ export const gitClone = async (repoUrl: string, targetPath: string): Promise<any
         throw new Error('Not authenticated. Please login first.');
     }
 
-    const response = await fetch(`${API_URL}/api/files/git-clone`, {
+    const response = await fetch(getApiUrl('/files/git-clone'), {
         method: 'POST',
         headers: {
             'Authorization': `Bearer ${token}`,
@@ -269,7 +268,7 @@ export const renameFile = async (oldPath: string, newName: string): Promise<any>
         throw new Error('Not authenticated. Please login first.');
     }
 
-    const response = await fetch(`${API_URL}/api/files/rename`, {
+    const response = await fetch(getApiUrl('/files/rename'), {
         method: 'PUT',
         headers: {
             'Authorization': `Bearer ${token}`,
@@ -296,7 +295,7 @@ export const copyFiles = async (sourcePaths: string[], targetPath: string): Prom
         throw new Error('Not authenticated. Please login first.');
     }
 
-    const response = await fetch(`${API_URL}/api/files/copy`, {
+    const response = await fetch(getApiUrl('/files/copy'), {
         method: 'POST',
         headers: {
             'Authorization': `Bearer ${token}`,
@@ -323,7 +322,7 @@ export const moveFiles = async (sourcePaths: string[], targetPath: string): Prom
         throw new Error('Not authenticated. Please login first.');
     }
 
-    const response = await fetch(`${API_URL}/api/files/move`, {
+    const response = await fetch(getApiUrl('/files/move'), {
         method: 'POST',
         headers: {
             'Authorization': `Bearer ${token}`,
@@ -342,7 +341,7 @@ export const moveFiles = async (sourcePaths: string[], targetPath: string): Prom
 
 export const changePermissions = async (path: string, mode: string) => {
     const token = getToken();
-    const response = await fetch(`${API_URL}/api/files/permissions`, {
+    const response = await fetch(getApiUrl('/files/permissions'), {
         method: 'POST',
         headers: {
             'Authorization': `Bearer ${token}`,
@@ -361,7 +360,7 @@ export const changePermissions = async (path: string, mode: string) => {
 
 export const compressFiles = async (paths: string[], archiveName: string) => {
     const token = getToken();
-    const response = await fetch(`${API_URL}/api/files/compress`, {
+    const response = await fetch(getApiUrl('/files/compress'), {
         method: 'POST',
         headers: {
             'Authorization': `Bearer ${token}`,
@@ -377,4 +376,3 @@ export const compressFiles = async (paths: string[], archiveName: string) => {
 
     return response.json();
 };
-

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import ProtectedDashboard from '../components/ProtectedDashboard';
 import toast, { Toaster } from 'react-hot-toast';
 import { getToken } from '../utils/authApi';
+import { getApiUrl } from '../utils/api';
 import { Database, DatabaseStatsType } from '../types';
 import DatabaseHeader from '../components/database/DatabaseHeader';
 import DatabaseStats from '../components/database/DatabaseStats';
@@ -38,7 +39,7 @@ const Databases: React.FC = () => {
     const loadDatabases = async () => {
         try {
             const token = getToken();
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/databases`, {
+            const response = await fetch(getApiUrl('/databases'), {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await response.json();
@@ -63,7 +64,7 @@ const Databases: React.FC = () => {
 
         try {
             const token = getToken();
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/databases`, {
+            const response = await fetch(getApiUrl('/databases'), {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -97,7 +98,7 @@ const Databases: React.FC = () => {
 
         try {
             const token = getToken();
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/databases/${id}`, {
+            const response = await fetch(getApiUrl(`/databases/${id}`), {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -123,7 +124,7 @@ const Databases: React.FC = () => {
 
         try {
             const token = getToken();
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/databases/${selectedDatabase.id}/password`, {
+            const response = await fetch(getApiUrl(`/databases/${selectedDatabase.id}/password`), {
                 method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${token}`,

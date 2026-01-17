@@ -100,69 +100,81 @@ func printBanner(cfg *config.Config) {
 
 	banner := fmt.Sprintf(`
 %s
-🚀 CloudKu API Server (Golang) - 100%% Complete
+🚀 CloudKu API Server (Golang) - v1.0.0
 %s
 📡 Server running on: http://localhost:%s
 🗄️  Database: Connected to PostgreSQL
 🌍 Environment: %s
 🔗 CORS enabled for: %s
+📦 API Version: v1 (stable)
 %s
 
 📋 Available API Endpoints:
 
-🔐 AUTH:
-  POST   /api/auth/register     - Email/password register
-  POST   /api/auth/login        - Email/password login
-  POST   /api/auth/google       - Google OAuth login
-  POST   /api/auth/github       - GitHub OAuth login
-  GET    /api/auth/me           - Get current user
+🔍 DISCOVERY:
+  GET    /health             - Server health check
+  GET    /api                - API info
+  GET    /api/versions       - List API versions
 
-📁 FILES:
-  GET    /api/files/list        - List files
-  GET    /api/files/stats       - Get storage stats
-  POST   /api/files/upload      - Upload file
-  GET    /api/files/download    - Download file
-  DELETE /api/files/delete      - Delete file/folder
-  POST   /api/files/folder      - Create folder
-  GET    /api/files/read        - Read file content
-  PUT    /api/files/update      - Update file content
-  PUT    /api/files/rename      - Rename file/folder
-  POST   /api/files/copy        - Copy files
-  POST   /api/files/move        - Move files
-  POST   /api/files/extract     - Extract ZIP
-  POST   /api/files/compress    - Compress to ZIP
-  POST   /api/files/git-clone   - Clone Git repository
-  PUT    /api/files/permissions - Change permissions
+🔐 AUTH (/api/v1/auth):
+  POST   /register           - Email/password register [PUBLIC]
+  POST   /login              - Email/password login [PUBLIC]
+  POST   /google             - Google OAuth login [PUBLIC]
+  POST   /github             - GitHub OAuth login [PUBLIC]
+  GET    /me                 - Get current user [PROTECTED]
+  DELETE /me                 - Delete account [PROTECTED]
 
-🌐 DOMAINS:
-  GET    /api/domains           - Get all domains
-  GET    /api/domains/:id       - Get domain details
-  POST   /api/domains           - Create domain
-  PUT    /api/domains/:id       - Update domain
-  DELETE /api/domains/:id       - Delete domain
-  POST   /api/domains/:id/verify - Verify domain DNS
+📁 FILES (/api/v1/files) [ALL PROTECTED]:
+  GET    /list               - List files
+  GET    /stats              - Get storage stats
+  POST   /upload             - Upload file
+  GET    /download           - Download file
+  DELETE /delete             - Delete file/folder
+  POST   /folder             - Create folder
+  GET    /read               - Read file content
+  PUT    /update             - Update file content
+  PUT    /rename             - Rename file/folder
+  POST   /copy               - Copy files
+  POST   /move               - Move files
+  POST   /extract            - Extract ZIP
+  POST   /compress           - Compress to ZIP
+  POST   /git-clone          - Clone Git repository
+  PUT    /permissions        - Change permissions
 
-📝 DNS:
-  GET    /api/domains/:id/dns           - Get DNS records
-  POST   /api/domains/:id/dns           - Create DNS record
-  DELETE /api/domains/:id/dns/:recordId - Delete DNS record
-  GET    /api/dns/stats                 - DNS statistics
-  GET    /api/dns/:domainId/export      - Export zone file
+🌐 DOMAINS (/api/v1/domains) [ALL PROTECTED]:
+  GET    /                   - Get all domains
+  GET    /:id                - Get domain details
+  POST   /                   - Create domain
+  PUT    /:id                - Update domain
+  DELETE /:id                - Delete domain
+  POST   /:id/verify         - Verify domain DNS
+  GET    /:id/dns            - Get DNS records
+  POST   /:id/dns            - Create DNS record
+  DELETE /:id/dns/:recordId  - Delete DNS record
 
-🔒 SSL:
-  GET    /api/ssl/stats              - SSL statistics
-  GET    /api/ssl/expiring           - Expiring certificates
-  POST   /api/ssl/:domainId/enable   - Enable SSL
-  POST   /api/ssl/:domainId/disable  - Disable SSL
-  POST   /api/ssl/:domainId/renew    - Renew SSL
-  GET    /api/ssl/:domainId/info     - Get SSL info
+📝 DNS (/api/v1/dns) [ALL PROTECTED]:
+  GET    /stats              - DNS statistics
+  GET    /powerdns/status    - PowerDNS status
+  POST   /powerdns/reload    - Reload PowerDNS
+  GET    /:domainId/records  - Get PowerDNS records
+  GET    /:domainId/export   - Export zone file
 
-🗄️ DATABASES:
-  GET    /api/databases              - Get all databases
-  GET    /api/databases/stats        - Database statistics
-  POST   /api/databases              - Create database
-  DELETE /api/databases/:id          - Delete database
-  PUT    /api/databases/:id/password - Change password
+🔒 SSL (/api/v1/ssl) [ALL PROTECTED]:
+  GET    /stats              - SSL statistics
+  GET    /expiring           - Expiring certificates
+  POST   /:domainId/enable   - Enable SSL
+  POST   /:domainId/disable  - Disable SSL
+  POST   /:domainId/renew    - Renew SSL
+  GET    /:domainId/info     - Get SSL info
+
+🗄️ DATABASES (/api/v1/databases) [ALL PROTECTED]:
+  GET    /                   - Get all databases
+  GET    /stats              - Database statistics
+  POST   /                   - Create database
+  DELETE /:id                - Delete database
+  PUT    /:id/password       - Change password
+  GET    /:id/schema         - Get schema (SQL Terminal)
+  POST   /:id/query          - Execute query (SQL Terminal)
 
 %s
 `, line, line, cfg.Port, cfg.Environment, cfg.FrontendURL, line, line)

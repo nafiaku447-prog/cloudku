@@ -3,7 +3,7 @@
  * @file utils/authApi.ts
  */
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+import { getApiUrl } from './api';
 
 export interface LoginResponse {
     success: boolean;
@@ -25,7 +25,7 @@ export interface LoginResponse {
  * Google OAuth Login handler (with JWT token from popup/One Tap)
  */
 export const googleLogin = async (token: string): Promise<LoginResponse> => {
-    const response = await fetch(`${API_URL}/api/auth/google`, {
+    const response = await fetch(getApiUrl('/auth/google'), {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -47,7 +47,7 @@ export const googleLogin = async (token: string): Promise<LoginResponse> => {
  * Google OAuth Login with Authorization Code (redirect flow)
  */
 export const googleLoginWithCode = async (code: string): Promise<LoginResponse> => {
-    const response = await fetch(`${API_URL}/api/auth/google/callback`, {
+    const response = await fetch(getApiUrl('/auth/google/callback'), {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -70,7 +70,7 @@ export const googleLoginWithCode = async (code: string): Promise<LoginResponse> 
  */
 export const githubLogin = async (code: string): Promise<LoginResponse> => {
     try {
-        const response = await fetch(`${API_URL}/api/auth/github`, {
+        const response = await fetch(getApiUrl('/auth/github'), {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -99,7 +99,7 @@ export const register = async (data: {
     name: string;
     password: string;
 }): Promise<LoginResponse> => {
-    const response = await fetch(`${API_URL}/api/auth/register`, {
+    const response = await fetch(getApiUrl('/auth/register'), {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -122,7 +122,7 @@ export const login = async (data: {
     email: string;
     password: string;
 }): Promise<LoginResponse> => {
-    const response = await fetch(`${API_URL}/api/auth/login`, {
+    const response = await fetch(getApiUrl('/auth/login'), {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -148,7 +148,7 @@ export const getCurrentUser = async (): Promise<any> => {
         throw new Error('No authentication token found');
     }
 
-    const response = await fetch(`${API_URL}/api/auth/me`, {
+    const response = await fetch(getApiUrl('/auth/me'), {
         headers: {
             Authorization: `Bearer ${token}`,
         },
@@ -192,7 +192,7 @@ export const deleteAccount = async (): Promise<void> => {
         throw new Error('No authentication token found');
     }
 
-    const response = await fetch(`${API_URL}/api/auth/me`, {
+    const response = await fetch(getApiUrl('/auth/me'), {
         method: 'DELETE',
         headers: {
             Authorization: `Bearer ${token}`,

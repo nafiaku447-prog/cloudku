@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import ProtectedDashboard from '../components/ProtectedDashboard';
 import toast, { Toaster } from 'react-hot-toast';
 import { getToken } from '../utils/authApi';
+import { getApiUrl } from '../utils/api';
 
 interface Domain {
     id: number;
@@ -51,7 +52,7 @@ const Domains: React.FC = () => {
     const loadDomains = async () => {
         try {
             const token = getToken();
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/domains`, {
+            const response = await fetch(getApiUrl('/domains'), {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await response.json();
@@ -75,7 +76,7 @@ const Domains: React.FC = () => {
 
         try {
             const token = getToken();
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/domains`, {
+            const response = await fetch(getApiUrl('/domains'), {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -104,7 +105,7 @@ const Domains: React.FC = () => {
 
         try {
             const token = getToken();
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/domains/${id}`, {
+            const response = await fetch(getApiUrl(`/domains/${id}`), {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -125,7 +126,7 @@ const Domains: React.FC = () => {
     const handleVerifyDomain = async (id: number) => {
         try {
             const token = getToken();
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/domains/${id}/verify`, {
+            const response = await fetch(getApiUrl(`/domains/${id}/verify`), {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -146,7 +147,7 @@ const Domains: React.FC = () => {
     const loadDNSRecords = async (domainId: number) => {
         try {
             const token = getToken();
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/domains/${domainId}/dns`, {
+            const response = await fetch(getApiUrl(`/domains/${domainId}/dns`), {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await response.json();
@@ -166,7 +167,7 @@ const Domains: React.FC = () => {
 
         try {
             const token = getToken();
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/domains/${selectedDomain.id}/dns`, {
+            const response = await fetch(getApiUrl(`/domains/${selectedDomain.id}/dns`), {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -200,7 +201,7 @@ const Domains: React.FC = () => {
 
         try {
             const token = getToken();
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/domains/${selectedDomain.id}/dns/${recordId}`, {
+            const response = await fetch(getApiUrl(`/domains/${selectedDomain.id}/dns/${recordId}`), {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -224,7 +225,7 @@ const Domains: React.FC = () => {
             const token = getToken();
             const loadingToast = toast.loading(`${action === 'enable' ? 'Enabling' : 'Disabling'} SSL... (This may take a few seconds)`);
 
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/ssl/${domain.id}/${action}`, {
+            const response = await fetch(getApiUrl(`/ssl/${domain.id}/${action}`), {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}` }
             });

@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/compone
 import { Button } from "@/components/ui/button"
 import { Play, Eraser, Loader2, CheckCircle2, Terminal, X, Database as DatabaseIcon, ChevronRight, ChevronDown, Table as TableIcon } from "lucide-react"
 import { getToken } from '../../utils/authApi';
+import { getApiUrl } from '../../utils/api';
 import Editor, { OnMount } from "@monaco-editor/react";
 
 interface DatabaseTerminalModalProps {
@@ -48,7 +49,7 @@ const DatabaseTerminalModal: React.FC<DatabaseTerminalModalProps> = ({
         setIsSchemaLoading(true);
         try {
             const token = getToken();
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/databases/${database.id}/schema`, {
+            const response = await fetch(getApiUrl(`/databases/${database.id}/schema`), {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await response.json();
@@ -137,7 +138,7 @@ const DatabaseTerminalModal: React.FC<DatabaseTerminalModalProps> = ({
 
         try {
             const token = getToken();
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/databases/${database.id}/query`, {
+            const response = await fetch(getApiUrl(`/databases/${database.id}/query`), {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,
